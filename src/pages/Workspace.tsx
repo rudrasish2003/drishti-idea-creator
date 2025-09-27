@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sidebar } from '@/components/Sidebar';
@@ -43,6 +43,7 @@ const Workspace = () => {
   const [currentIdea, setCurrentIdea] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [activeTab, setActiveTab] = useState<'prd' | 'implementation'>('prd');
 
   const handleNewProject = () => {
     setSelectedProjectId('');
@@ -110,8 +111,14 @@ const Workspace = () => {
       const updatedProject = { ...currentProject, implementation: newImplementation };
       setCurrentProject(updatedProject);
       setProjects(prev => prev.map(p => p.id === currentProject.id ? updatedProject : p));
+      setActiveTab('implementation');
       setIsGenerating(false);
     }, 2000);
+  };
+
+  const downloadPanel = () => {
+    // Placeholder for download functionality
+    console.log(`Downloading ${activeTab} panel content...`);
   };
 
   return (
@@ -123,159 +130,219 @@ const Workspace = () => {
         selectedProjectId={selectedProjectId}
       />
       
-      <main className="flex-1 overflow-y-auto">
-        <div className="canvas-container">
-          {/* Hero Section */}
-          <div className="text-center py-12">
-            <h1 className="text-3xl font-bold text-foreground mb-4">
-              What's your next big idea?
-            </h1>
-            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Describe your product idea in natural language. Our AI will help you create a structured roadmap.
-            </p>
-          </div>
-
-          {/* Idea Input */}
-          <div className="flashcard mb-8">
-            <div className="space-y-4">
-              <Textarea
-                placeholder="Describe your product idea... (e.g., 'A mobile app that helps people find local restaurants based on their dietary restrictions and preferences')"
-                value={currentIdea}
-                onChange={(e) => setCurrentIdea(e.target.value)}
-                className="min-h-[120px] text-base"
-              />
-              <Button 
-                onClick={generatePRD}
-                variant="gradient"
-                disabled={!currentIdea.trim() || isGenerating}
-                className="w-full sm:w-auto"
-              >
-                {isGenerating ? (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Write to Create
-                  </>
-                )}
-              </Button>
+      <main className="flex-1 overflow-hidden">
+        {/* Figma-style Canvas with dotted grid */}
+        <div className="h-full bg-background relative overflow-auto" 
+             style={{
+               backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px)',
+               backgroundSize: '20px 20px'
+             }}>
+          
+          <div className="max-w-4xl mx-auto p-8">
+            {/* Hero Section */}
+            <div className="text-center py-12">
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                What's your next big idea?
+              </h1>
+              <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+                Describe your product idea in natural language. Our AI will help you create a structured roadmap.
+              </p>
             </div>
-          </div>
 
-          {/* Generated PRD */}
-          {currentProject?.prd && (
-            <div className="space-y-6 mb-8">
-              <h2 className="text-2xl font-bold text-foreground">Product Requirements Document</h2>
-              
-              <Flashcard
-                title="Problem Statement"
-                content={currentProject.prd.problem}
-                onEdit={(newContent) => {
-                  if (currentProject) {
-                    const updated = { ...currentProject, prd: { ...currentProject.prd!, problem: newContent }};
-                    setCurrentProject(updated);
-                    setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                  }
-                }}
-              />
-              
-              <Flashcard
-                title="Goal & Vision"
-                content={currentProject.prd.goal}
-                onEdit={(newContent) => {
-                  if (currentProject) {
-                    const updated = { ...currentProject, prd: { ...currentProject.prd!, goal: newContent }};
-                    setCurrentProject(updated);
-                    setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                  }
-                }}
-              />
-              
-              <Flashcard
-                title="Core Features"
-                content={currentProject.prd.features}
-                onEdit={(newContent) => {
-                  if (currentProject) {
-                    const updated = { ...currentProject, prd: { ...currentProject.prd!, features: newContent }};
-                    setCurrentProject(updated);
-                    setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                  }
-                }}
-              />
-              
-              <Flashcard
-                title="Success Metrics"
-                content={currentProject.prd.metrics}
-                onEdit={(newContent) => {
-                  if (currentProject) {
-                    const updated = { ...currentProject, prd: { ...currentProject.prd!, metrics: newContent }};
-                    setCurrentProject(updated);
-                    setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                  }
-                }}
-              />
+            {/* Idea Input */}
+            <div className="flashcard mb-8">
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Describe your product idea... (e.g., 'A mobile app that helps people find local restaurants based on their dietary restrictions and preferences')"
+                  value={currentIdea}
+                  onChange={(e) => setCurrentIdea(e.target.value)}
+                  className="min-h-[120px] text-base"
+                />
+                <Button 
+                  onClick={generatePRD}
+                  variant="gradient"
+                  disabled={!currentIdea.trim() || isGenerating}
+                  className="w-full sm:w-auto"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Write to Create
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
 
-              {!currentProject.implementation && (
-                <div className="flex justify-center">
+            {/* Slider Tabs and Content */}
+            {currentProject?.prd && (
+              <div className="space-y-6">
+                {/* Tab Navigation */}
+                <div className="flex items-center justify-between">
+                  <div className="flex bg-muted rounded-lg p-1">
+                    <button
+                      onClick={() => setActiveTab('prd')}
+                      className={`px-4 py-2 rounded-md transition-all ${
+                        activeTab === 'prd' 
+                          ? 'bg-background text-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      PRD
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('implementation')}
+                      disabled={!currentProject?.implementation}
+                      className={`px-4 py-2 rounded-md transition-all ${
+                        activeTab === 'implementation' 
+                          ? 'bg-background text-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed'
+                      }`}
+                    >
+                      Implementation Plan
+                    </button>
+                  </div>
+
+                  {/* Download Button */}
                   <Button 
-                    onClick={generateImplementation}
-                    variant="gradient"
-                    disabled={isGenerating}
+                    onClick={downloadPanel}
+                    variant="outline"
+                    size="sm"
                     className="flex items-center gap-2"
                   >
-                    Generate MVP Implementation Plan
-                    <ArrowRight className="h-4 w-4" />
+                    <Download className="h-4 w-4" />
+                    Download
                   </Button>
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Generated Implementation Plan */}
-          {currentProject?.implementation && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-foreground">Implementation Plan</h2>
-              
-              <Flashcard
-                title="Development Tasks"
-                content={currentProject.implementation.tasks}
-                onEdit={(newContent) => {
-                  if (currentProject) {
-                    const updated = { ...currentProject, implementation: { ...currentProject.implementation!, tasks: newContent }};
-                    setCurrentProject(updated);
-                    setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                  }
-                }}
-              />
-              
-              <Flashcard
-                title="Technology Stack"
-                content={currentProject.implementation.techStack}
-                onEdit={(newContent) => {
-                  if (currentProject) {
-                    const updated = { ...currentProject, implementation: { ...currentProject.implementation!, techStack: newContent }};
-                    setCurrentProject(updated);
-                    setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                  }
-                }}
-              />
-              
-              <Flashcard
-                title="Timeline & Resources"
-                content={currentProject.implementation.timeline}
-                onEdit={(newContent) => {
-                  if (currentProject) {
-                    const updated = { ...currentProject, implementation: { ...currentProject.implementation!, timeline: newContent }};
-                    setCurrentProject(updated);
-                    setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                  }
-                }}
-              />
-            </div>
-          )}
+                {/* Panel Content with Slide Animation */}
+                <div className="relative overflow-hidden">
+                  {/* PRD Panel */}
+                  <div className={`transition-transform duration-300 ease-in-out ${
+                    activeTab === 'prd' ? 'translate-x-0' : '-translate-x-full absolute top-0 left-0 w-full'
+                  }`}>
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-bold text-foreground">Product Requirements Document</h2>
+                      
+                      <Flashcard
+                        title="Problem Statement"
+                        content={currentProject.prd.problem}
+                        onEdit={(newContent) => {
+                          if (currentProject) {
+                            const updated = { ...currentProject, prd: { ...currentProject.prd!, problem: newContent }};
+                            setCurrentProject(updated);
+                            setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
+                          }
+                        }}
+                      />
+                      
+                      <Flashcard
+                        title="Goal & Vision"
+                        content={currentProject.prd.goal}
+                        onEdit={(newContent) => {
+                          if (currentProject) {
+                            const updated = { ...currentProject, prd: { ...currentProject.prd!, goal: newContent }};
+                            setCurrentProject(updated);
+                            setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
+                          }
+                        }}
+                      />
+                      
+                      <Flashcard
+                        title="Core Features"
+                        content={currentProject.prd.features}
+                        onEdit={(newContent) => {
+                          if (currentProject) {
+                            const updated = { ...currentProject, prd: { ...currentProject.prd!, features: newContent }};
+                            setCurrentProject(updated);
+                            setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
+                          }
+                        }}
+                      />
+                      
+                      <Flashcard
+                        title="Success Metrics"
+                        content={currentProject.prd.metrics}
+                        onEdit={(newContent) => {
+                          if (currentProject) {
+                            const updated = { ...currentProject, prd: { ...currentProject.prd!, metrics: newContent }};
+                            setCurrentProject(updated);
+                            setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
+                          }
+                        }}
+                      />
+
+                      {!currentProject.implementation && (
+                        <div className="flex justify-center">
+                          <Button 
+                            onClick={generateImplementation}
+                            variant="gradient"
+                            disabled={isGenerating}
+                            className="flex items-center gap-2"
+                          >
+                            Generate MVP Implementation Plan
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Implementation Plan Panel */}
+                  {currentProject?.implementation && (
+                    <div className={`transition-transform duration-300 ease-in-out ${
+                      activeTab === 'implementation' ? 'translate-x-0' : 'translate-x-full absolute top-0 left-0 w-full'
+                    }`}>
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-foreground">Implementation Plan</h2>
+                        
+                        <Flashcard
+                          title="Development Tasks"
+                          content={currentProject.implementation.tasks}
+                          onEdit={(newContent) => {
+                            if (currentProject) {
+                              const updated = { ...currentProject, implementation: { ...currentProject.implementation!, tasks: newContent }};
+                              setCurrentProject(updated);
+                              setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
+                            }
+                          }}
+                        />
+                        
+                        <Flashcard
+                          title="Technology Stack"
+                          content={currentProject.implementation.techStack}
+                          onEdit={(newContent) => {
+                            if (currentProject) {
+                              const updated = { ...currentProject, implementation: { ...currentProject.implementation!, techStack: newContent }};
+                              setCurrentProject(updated);
+                              setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
+                            }
+                          }}
+                        />
+                        
+                        <Flashcard
+                          title="Timeline & Resources"
+                          content={currentProject.implementation.timeline}
+                          onEdit={(newContent) => {
+                            if (currentProject) {
+                              const updated = { ...currentProject, implementation: { ...currentProject.implementation!, timeline: newContent }};
+                              setCurrentProject(updated);
+                              setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
