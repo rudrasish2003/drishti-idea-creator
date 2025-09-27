@@ -1,10 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { LogOut, User } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const location = useLocation();
   const isWorkspace = location.pathname === '/workspace';
+  const { isAuthenticated, user, logout } = useAuth();
 
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -18,12 +21,27 @@ export const Header: React.FC = () => {
 
         {!isWorkspace && (
           <nav className="flex items-center space-x-4">
-            <Link to="/signin">
-              <Button variant="ghost">Sign In</Button>
-            </Link>
-            <Link to="/signup">
-              <Button variant="gradient">Sign Up</Button>
-            </Link>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  <span>{user?.firstName} {user?.lastName}</span>
+                </div>
+                <Button variant="ghost" onClick={logout} className="flex items-center space-x-2">
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Link to="/signin">
+                  <Button variant="ghost">Sign In</Button>
+                </Link>
+                <Link to="/signup">
+                  <Button variant="gradient">Sign Up</Button>
+                </Link>
+              </>
+            )}
           </nav>
         )}
       </div>

@@ -1,49 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sidebar } from '@/components/Sidebar';
 import { Flashcard } from '@/components/Flashcard';
-
-interface Project {
-  id: string;
-  title: string;
-  createdAt: string;
-  idea: string;
-  prd?: {
-    problem: string;
-    goal: string;
-    features: string;
-    metrics: string;
-  };
-  implementation?: {
-    tasks: string;
-    techStack: string;
-    timeline: string;
-  };
-}
+import { useProjects } from '@/contexts/ProjectsContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiService } from '@/services/api';
+import { toast } from 'sonner';
 
 const Workspace = () => {
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: '1',
-      title: 'AI-powered Task Manager',
-      createdAt: '2024-01-15',
-      idea: 'A task management app that uses AI to automatically prioritize tasks based on deadlines, importance, and user behavior patterns.',
-    },
-    {
-      id: '2', 
-      title: 'Social Recipe Platform',
-      createdAt: '2024-01-10',
-      idea: 'A social platform where users can share recipes, rate them, and get personalized recommendations based on dietary preferences.',
-    }
-  ]);
+  const { 
+    projects, 
+    currentProject, 
+    isLoading, 
+    fetchProjects, 
+    createProject, 
+    generatePRD, 
+    generateImplementationPlan,
+    setCurrentProject 
+  } = useProjects();
+  const { user } = useAuth();
   
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [currentIdea, setCurrentIdea] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [activeTab, setActiveTab] = useState<'prd' | 'implementation'>('prd');
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  // Debug logging
+  useEffect(() => {
+    if (currentProject) {
+      console.log('Current project:', currentProject);
+      console.log('Has PRD:', !!currentProject.prd);
+      console.log('Has Implementation Plan:', !!currentProject.implementationPlan);
+    }
+  }, [currentProject]);
 
   const handleNewProject = () => {
     setSelectedProjectId('');
@@ -52,7 +47,7 @@ const Workspace = () => {
   };
 
   const handleSelectProject = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
+    const project = projects.find(p => p._id === projectId);
     if (project) {
       setSelectedProjectId(projectId);
       setCurrentProject(project);
@@ -60,65 +55,90 @@ const Workspace = () => {
     }
   };
 
-  const generatePRD = async () => {
+  const handleGeneratePRD = async () => {
     if (!currentIdea.trim()) return;
     
     setIsGenerating(true);
     
-    // Mock PRD generation
-    setTimeout(() => {
-      const newPRD = {
-        problem: `Users struggle with task management because current solutions don't understand context and priority. This leads to decreased productivity and missed deadlines.`,
-        goal: `Create an intelligent task management system that automatically prioritizes tasks and adapts to user behavior, increasing productivity by 40%.`,
-        features: `• AI-powered task prioritization\n• Smart deadline prediction\n• Behavioral pattern analysis\n• Cross-platform synchronization\n• Voice task creation\n• Integration with calendar and email`,
-        metrics: `• User productivity increase: 40%\n• Task completion rate: 85%\n• Daily active users: 10,000+\n• User retention (30-day): 70%\n• Average session time: 15 minutes`
-      };
-
+    try {
       if (currentProject) {
-        const updatedProject = { ...currentProject, prd: newPRD };
-        setCurrentProject(updatedProject);
-        setProjects(prev => prev.map(p => p.id === currentProject.id ? updatedProject : p));
+        // Generate PRD for existing project
+        await generatePRD(currentProject._id);
+        toast.success('PRD generated successfully!');
+        console.log('PRD generated for existing project');
       } else {
-        const newProject: Project = {
-          id: Date.now().toString(),
-          title: currentIdea.slice(0, 50) + (currentIdea.length > 50 ? '...' : ''),
-          createdAt: new Date().toISOString(),
-          idea: currentIdea,
-          prd: newPRD
-        };
-        setProjects(prev => [newProject, ...prev]);
+        // Create new project and generate PRD
+        const newProject = await createProject(
+          currentIdea.slice(0, 50) + (currentIdea.length > 50 ? '...' : ''),
+          currentIdea
+        );
         setCurrentProject(newProject);
-        setSelectedProjectId(newProject.id);
+        setSelectedProjectId(newProject._id);
+        
+        // Generate PRD for the new project
+        await generatePRD(newProject._id);
+        toast.success('Project created and PRD generated successfully!');
+        console.log('PRD generated for new project');
       }
-      
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate PRD');
+      console.error('PRD generation error:', error);
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
-  const generateImplementation = async () => {
-    if (!currentProject?.prd) return;
+  const handleGenerateImplementation = async () => {
+    if (!currentProject?._id) {
+      toast.error('No project selected');
+      return;
+    }
+    
+    if (!currentProject?.prd) {
+      toast.error('Please generate PRD first');
+      return;
+    }
     
     setIsGenerating(true);
     
-    // Mock implementation generation
-    setTimeout(() => {
-      const newImplementation = {
-        tasks: `Phase 1 (Weeks 1-4):\n• Set up development environment\n• Design database schema\n• Create user authentication system\n• Build basic task CRUD operations\n\nPhase 2 (Weeks 5-8):\n• Implement AI prioritization engine\n• Add behavioral tracking\n• Create mobile responsive UI\n• Integrate third-party APIs`,
-        techStack: `Frontend:\n• React with TypeScript\n• Tailwind CSS\n• React Query for state management\n\nBackend:\n• Node.js with Express\n• PostgreSQL database\n• Redis for caching\n• TensorFlow.js for AI features\n\nInfrastructure:\n• AWS for hosting\n• Docker for containerization\n• GitHub Actions for CI/CD`,
-        timeline: `Total Duration: 12 weeks\n\nWeek 1-2: Project setup & planning\nWeek 3-6: Core functionality development\nWeek 7-9: AI features implementation\nWeek 10-11: Testing & optimization\nWeek 12: Deployment & launch preparation\n\nTeam: 2 frontend developers, 1 backend developer, 1 AI/ML engineer`
-      };
-
-      const updatedProject = { ...currentProject, implementation: newImplementation };
-      setCurrentProject(updatedProject);
-      setProjects(prev => prev.map(p => p.id === currentProject.id ? updatedProject : p));
+    try {
+      await generateImplementationPlan(currentProject._id);
+      await fetchProjects(); // Refresh projects to get updated data
+      toast.success('Implementation plan generated successfully!');
       setActiveTab('implementation');
+    } catch (error: any) {
+      console.error('Implementation generation error:', error);
+      toast.error(error.message || 'Failed to generate implementation plan');
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
-  const downloadPanel = () => {
-    // Placeholder for download functionality
-    console.log(`Downloading ${activeTab} panel content...`);
+  const handleDownload = async (type: 'prd' | 'plan' | 'complete', format?: 'markdown' | 'pdf') => {
+    if (!currentProject) return;
+    
+    try {
+      if (type === 'complete') {
+        await apiService.downloadCompleteProject(currentProject._id);
+        toast.success('Complete project downloaded!');
+      } else if (type === 'prd') {
+        if (format === 'markdown') {
+          await apiService.downloadPRDMarkdown(currentProject._id);
+        } else {
+          await apiService.downloadPRDPDF(currentProject._id);
+        }
+        toast.success(`PRD ${format} downloaded!`);
+      } else if (type === 'plan') {
+        if (format === 'markdown') {
+          await apiService.downloadPlanMarkdown(currentProject._id);
+        } else {
+          await apiService.downloadPlanPDF(currentProject._id);
+        }
+        toast.success(`Implementation plan ${format} downloaded!`);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Download failed');
+    }
   };
 
   return (
@@ -159,7 +179,7 @@ const Workspace = () => {
                   className="min-h-[120px] text-base"
                 />
                 <Button 
-                  onClick={generatePRD}
+                  onClick={handleGeneratePRD}
                   variant="gradient"
                   disabled={!currentIdea.trim() || isGenerating}
                   className="w-full sm:w-auto"
@@ -197,7 +217,7 @@ const Workspace = () => {
                     </button>
                     <button
                       onClick={() => setActiveTab('implementation')}
-                      disabled={!currentProject?.implementation}
+                      disabled={!currentProject?.implementationPlan}
                       className={`px-4 py-2 rounded-md transition-all ${
                         activeTab === 'implementation' 
                           ? 'bg-background text-foreground shadow-sm' 
@@ -209,15 +229,60 @@ const Workspace = () => {
                   </div>
 
                   {/* Download Button */}
-                  <Button 
-                    onClick={downloadPanel}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {activeTab === 'prd' ? (
+                      <>
+                        <Button 
+                          onClick={() => handleDownload('prd', 'markdown')}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          PRD MD
+                        </Button>
+                        <Button 
+                          onClick={() => handleDownload('prd', 'pdf')}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          PRD PDF
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button 
+                          onClick={() => handleDownload('plan', 'markdown')}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Plan MD
+                        </Button>
+                        <Button 
+                          onClick={() => handleDownload('plan', 'pdf')}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Plan PDF
+                        </Button>
+                      </>
+                    )}
+                    <Button 
+                      onClick={() => handleDownload('complete')}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Complete
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Panel Content with Slide Animation */}
@@ -230,63 +295,86 @@ const Workspace = () => {
                       <h2 className="text-2xl font-bold text-foreground">Product Requirements Document</h2>
                       
                       <Flashcard
-                        title="Problem Statement"
-                        content={currentProject.prd.problem}
+                        title="Overview"
+                        content={currentProject.prd.content?.overview || 'No overview available'}
                         onEdit={(newContent) => {
-                          if (currentProject) {
-                            const updated = { ...currentProject, prd: { ...currentProject.prd!, problem: newContent }};
-                            setCurrentProject(updated);
-                            setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                          }
+                          // TODO: Implement PRD content editing
+                          console.log('Edit overview:', newContent);
                         }}
                       />
                       
                       <Flashcard
-                        title="Goal & Vision"
-                        content={currentProject.prd.goal}
+                        title="Objectives"
+                        content={Array.isArray(currentProject.prd.content?.objectives) 
+                          ? currentProject.prd.content.objectives.join('\n• ') 
+                          : 'No objectives available'}
                         onEdit={(newContent) => {
-                          if (currentProject) {
-                            const updated = { ...currentProject, prd: { ...currentProject.prd!, goal: newContent }};
-                            setCurrentProject(updated);
-                            setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                          }
+                          // TODO: Implement PRD content editing
+                          console.log('Edit objectives:', newContent);
+                        }}
+                      />
+                      
+                      <Flashcard
+                        title="Target Audience"
+                        content={`Primary: ${currentProject.prd.content?.targetAudience?.primary || 'Not specified'}\nSecondary: ${currentProject.prd.content?.targetAudience?.secondary || 'Not specified'}`}
+                        onEdit={(newContent) => {
+                          // TODO: Implement PRD content editing
+                          console.log('Edit target audience:', newContent);
                         }}
                       />
                       
                       <Flashcard
                         title="Core Features"
-                        content={currentProject.prd.features}
+                        content={Array.isArray(currentProject.prd.content?.features) 
+                          ? currentProject.prd.content.features.map((f: any) => `• ${f.name}: ${f.description}`).join('\n')
+                          : 'No features available'}
                         onEdit={(newContent) => {
-                          if (currentProject) {
-                            const updated = { ...currentProject, prd: { ...currentProject.prd!, features: newContent }};
-                            setCurrentProject(updated);
-                            setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                          }
+                          // TODO: Implement PRD content editing
+                          console.log('Edit features:', newContent);
                         }}
                       />
                       
                       <Flashcard
                         title="Success Metrics"
-                        content={currentProject.prd.metrics}
+                        content={Array.isArray(currentProject.prd.content?.successMetrics) 
+                          ? currentProject.prd.content.successMetrics.join('\n• ')
+                          : 'No success metrics available'}
                         onEdit={(newContent) => {
-                          if (currentProject) {
-                            const updated = { ...currentProject, prd: { ...currentProject.prd!, metrics: newContent }};
-                            setCurrentProject(updated);
-                            setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                          }
+                          // TODO: Implement PRD content editing
+                          console.log('Edit success metrics:', newContent);
                         }}
                       />
 
-                      {!currentProject.implementation && (
+                      {/* Debug info */}
+                      <div className="text-xs text-muted-foreground mb-4 p-2 bg-muted rounded">
+                        Debug: Has PRD: {currentProject?.prd ? 'Yes' : 'No'}, 
+                        Has Implementation Plan: {currentProject?.implementationPlan ? 'Yes' : 'No'}
+                      </div>
+                      
+                      {currentProject?.prd && (
                         <div className="flex justify-center">
                           <Button 
-                            onClick={generateImplementation}
+                            onClick={handleGenerateImplementation}
                             variant="gradient"
                             disabled={isGenerating}
                             className="flex items-center gap-2"
                           >
-                            Generate MVP Implementation Plan
-                            <ArrowRight className="h-4 w-4" />
+                            {isGenerating ? (
+                              <>
+                                <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                                Generating Implementation Plan...
+                              </>
+                            ) : currentProject?.implementationPlan ? (
+                              <>
+                                View Implementation Plan
+                                <ArrowRight className="h-4 w-4" />
+                              </>
+                            ) : (
+                              <>
+                                Generate MVP Implementation Plan
+                                <ArrowRight className="h-4 w-4" />
+                              </>
+                            )}
                           </Button>
                         </div>
                       )}
@@ -294,7 +382,7 @@ const Workspace = () => {
                   </div>
 
                   {/* Implementation Plan Panel */}
-                  {currentProject?.implementation && (
+                  {currentProject?.implementationPlan && (
                     <div className={`transition-transform duration-300 ease-in-out ${
                       activeTab === 'implementation' ? 'translate-x-0' : 'translate-x-full absolute top-0 left-0 w-full'
                     }`}>
@@ -302,38 +390,52 @@ const Workspace = () => {
                         <h2 className="text-2xl font-bold text-foreground">Implementation Plan</h2>
                         
                         <Flashcard
-                          title="Development Tasks"
-                          content={currentProject.implementation.tasks}
+                          title="Project Setup"
+                          content={`Tech Stack:\n${JSON.stringify(currentProject.implementationPlan.content?.projectSetup?.techStack, null, 2)}\n\nProject Structure:\n${Array.isArray(currentProject.implementationPlan.content?.projectSetup?.projectStructure) 
+                            ? currentProject.implementationPlan.content.projectSetup.projectStructure.join('\n• ')
+                            : 'No project structure available'}`}
                           onEdit={(newContent) => {
-                            if (currentProject) {
-                              const updated = { ...currentProject, implementation: { ...currentProject.implementation!, tasks: newContent }};
-                              setCurrentProject(updated);
-                              setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                            }
+                            // TODO: Implement implementation plan content editing
+                            console.log('Edit project setup:', newContent);
                           }}
                         />
                         
                         <Flashcard
-                          title="Technology Stack"
-                          content={currentProject.implementation.techStack}
+                          title="Development Phases"
+                          content={Array.isArray(currentProject.implementationPlan.content?.developmentPhases) 
+                            ? currentProject.implementationPlan.content.developmentPhases.map((phase: any) => 
+                                `${phase.phase} (${phase.duration})\n${Array.isArray(phase.tasks) ? phase.tasks.map((task: any) => `• ${task.task}: ${task.description}`).join('\n') : 'No tasks'}\n`
+                              ).join('\n')
+                            : 'No development phases available'}
                           onEdit={(newContent) => {
-                            if (currentProject) {
-                              const updated = { ...currentProject, implementation: { ...currentProject.implementation!, techStack: newContent }};
-                              setCurrentProject(updated);
-                              setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                            }
+                            // TODO: Implement implementation plan content editing
+                            console.log('Edit development phases:', newContent);
                           }}
                         />
                         
                         <Flashcard
-                          title="Timeline & Resources"
-                          content={currentProject.implementation.timeline}
+                          title="API Design"
+                          content={Array.isArray(currentProject.implementationPlan.content?.apiDesign) 
+                            ? currentProject.implementationPlan.content.apiDesign.map((api: any) => 
+                                `${api.endpoint}\nDescription: ${api.description}\nParameters: ${Array.isArray(api.parameters) ? api.parameters.join(', ') : 'None'}\nResponse: ${api.response}\n`
+                              ).join('\n')
+                            : 'No API design available'}
                           onEdit={(newContent) => {
-                            if (currentProject) {
-                              const updated = { ...currentProject, implementation: { ...currentProject.implementation!, timeline: newContent }};
-                              setCurrentProject(updated);
-                              setProjects(prev => prev.map(p => p.id === currentProject.id ? updated : p));
-                            }
+                            // TODO: Implement implementation plan content editing
+                            console.log('Edit API design:', newContent);
+                          }}
+                        />
+                        
+                        <Flashcard
+                          title="Database Schema"
+                          content={Array.isArray(currentProject.implementationPlan.content?.databaseSchema) 
+                            ? currentProject.implementationPlan.content.databaseSchema.map((schema: any) => 
+                                `${schema.table}\nFields: ${Array.isArray(schema.fields) ? schema.fields.join(', ') : 'None'}\nRelationships: ${Array.isArray(schema.relationships) ? schema.relationships.join(', ') : 'None'}\n`
+                              ).join('\n')
+                            : 'No database schema available'}
+                          onEdit={(newContent) => {
+                            // TODO: Implement implementation plan content editing
+                            console.log('Edit database schema:', newContent);
                           }}
                         />
                       </div>

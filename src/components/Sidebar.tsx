@@ -3,9 +3,10 @@ import { Plus, FileText, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Project {
-  id: string;
+  _id: string;
   title: string;
   createdAt: string;
+  status: 'draft' | 'prd_generated' | 'plan_generated' | 'completed';
 }
 
 interface SidebarProps {
@@ -62,13 +63,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="space-y-1">
             {projects.map((project) => (
               <button
-                key={project.id}
+                key={project._id}
                 onClick={() => {
-                  onSelectProject(project.id);
+                  onSelectProject(project._id);
                   setIsMobileOpen(false);
                 }}
                 className={`w-full p-3 text-left rounded-md transition-colors ${
-                  selectedProjectId === project.id
+                  selectedProjectId === project._id
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                     : 'hover:bg-sidebar-accent/50'
                 }`}
@@ -76,6 +77,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="font-medium text-sm truncate">{project.title}</div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {new Date(project.createdAt).toLocaleDateString()}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 capitalize">
+                  {project.status.replace('_', ' ')}
                 </div>
               </button>
             ))}
