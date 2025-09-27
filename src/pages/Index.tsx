@@ -1,12 +1,125 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Lightbulb, FileText, Rocket } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Header } from '@/components/Header';
+import heroImage from '@/assets/hero-illustration.jpg';
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      {/* Hero Section */}
+      <section className="relative py-20 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-subtle opacity-30" />
+        <div className="container mx-auto max-w-6xl relative">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight">
+                  Turn your{' '}
+                  <span className="bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
+                    idea
+                  </span>{' '}
+                  into a product roadmap
+                </h1>
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  Transform scattered thoughts into structured PRDs and implementation plans. 
+                  From concept to launch, drishti.io guides your product journey.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/signup">
+                  <Button variant="hero" className="w-full sm:w-auto">
+                    Get Started
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  See How It Works
+                </Button>
+              </div>
+            </div>
+            
+            <div className="lg:order-last">
+              <div className="relative">
+                <img 
+                  src={heroImage} 
+                  alt="Product roadmap visualization" 
+                  className="w-full h-auto rounded-2xl shadow-2xl"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent rounded-2xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 bg-accent/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              From Idea to Implementation
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Our AI-powered platform transforms your ideas into actionable product roadmaps
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="flashcard text-center">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Lightbulb className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Capture Ideas</h3>
+              <p className="text-muted-foreground">
+                Simply describe your idea in natural language. No templates, no structure required.
+              </p>
+            </div>
+            
+            <div className="flashcard text-center">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Generate PRD</h3>
+              <p className="text-muted-foreground">
+                Get a structured Product Requirements Document with problems, goals, and features.
+              </p>
+            </div>
+            
+            <div className="flashcard text-center">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Rocket className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Plan Implementation</h3>
+              <p className="text-muted-foreground">
+                Receive detailed implementation plans with tasks, tech stack, and timelines.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-4xl text-center">
+          <h2 className="text-3xl font-bold text-foreground mb-4">
+            Ready to build your next product?
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Join hundreds of founders and product managers who use drishti.io to turn ideas into reality.
+          </p>
+          <Link to="/signup">
+            <Button variant="hero">
+              Start Building Today
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      </section>
     </div>
   );
 };
