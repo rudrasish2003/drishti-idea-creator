@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Menu, X } from 'lucide-react';
+import { Plus, FileText, Menu, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useProjects } from '@/contexts/ProjectsContext';
+import { toast } from 'sonner';
 
 interface Project {
   _id: string;
@@ -24,6 +26,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { deleteProject } = useProjects();
+
+  const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent project selection when clicking delete
+    
+    try {
+      await deleteProject(projectId);
+      toast.success('Project deleted successfully');
+      if (selectedProjectId === projectId) {
+        onNewProject(); // Reset if the deleted project was selected
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete project');
+    }
+  };
 
   const sidebarContent = (
     <div className="h-full flex flex-col bg-sidebar border-r border-sidebar-border">
@@ -68,19 +85,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectProject(project._id);
                   setIsMobileOpen(false);
                 }}
-                className={`w-full p-3 text-left rounded-md transition-colors ${
+                className={`w-full p-3 text-left rounded-md transition-colors relative group ${
                   selectedProjectId === project._id
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                     : 'hover:bg-sidebar-accent/50'
                 }`}
               >
-                <div className="font-medium text-sm truncate">{project.title}</div>
+                <div className="font-medium text-sm truncate pr-8">{project.title}</div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {new Date(project.createdAt).toLocaleDateString()}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 capitalize">
                   {project.status.replace('_', ' ')}
                 </div>
+                
+                {/* Delete Button */}
+                <button
+                  onClick={(e) => handleDeleteProject(project._id, e)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-opacity"
+                  title="Delete project"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive hover:text-destructive/80" />
+                </button>
               </button>
             ))}
           </div>
