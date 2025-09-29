@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Lightbulb, FileText, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
+import AnimatedDemo from '@/components/AnimatedDemo';
 import heroImage from '@/assets/hero-illustration.jpg';
 
 const Index = () => {
@@ -67,6 +68,11 @@ const Index = () => {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Our AI-powered platform transforms your ideas into actionable product roadmaps
             </p>
+          </div>
+          
+          {/* Animated Demo */}
+          <div className="mb-16">
+            <AnimatedDemo />
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
