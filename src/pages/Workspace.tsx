@@ -150,28 +150,67 @@ const Workspace = () => {
         selectedProjectId={selectedProjectId}
       />
       
-      <main className="flex-1 overflow-hidden flex flex-col">
-        {/* Main Canvas Area */}
-        <div className="flex-1 bg-background relative overflow-auto" 
+      <main className="flex-1 overflow-hidden">
+        {/* Figma-style Canvas with dotted grid */}
+        <div className="h-full bg-background relative overflow-auto" 
              style={{
-               backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.08) 1px, transparent 1px)',
-               backgroundSize: '24px 24px'
+               backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px)',
+               backgroundSize: '20px 20px'
              }}>
           
-          {/* Content Area */}
-          <div className="min-h-full flex flex-col">
-            {/* Generated Content Area */}
-            {currentProject?.prd ? (
-              <div className="flex-1 max-w-5xl mx-auto p-6 animate-fade-in">
+          <div className="max-w-4xl mx-auto p-8">
+            {/* Hero Section */}
+            <div className="text-center py-12">
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                What's your next big idea?
+              </h1>
+              <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+                Describe your product idea in natural language. Our AI will help you create a structured roadmap.
+              </p>
+            </div>
+
+            {/* Idea Input */}
+            <div className="flashcard mb-8">
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Describe your product idea... (e.g., 'A mobile app that helps people find local restaurants based on their dietary restrictions and preferences')"
+                  value={currentIdea}
+                  onChange={(e) => setCurrentIdea(e.target.value)}
+                  className="min-h-[120px] text-base"
+                />
+                <Button 
+                  onClick={handleGeneratePRD}
+                  variant="gradient"
+                  disabled={!currentIdea.trim() || isGenerating}
+                  className="w-full sm:w-auto"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Write to Create
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Slider Tabs and Content */}
+            {currentProject?.prd && (
+              <div className="space-y-6">
                 {/* Tab Navigation */}
-                <div className="flex items-center justify-between mb-8 sticky top-6 z-10">
-                  <div className="flex bg-background/80 backdrop-blur-sm rounded-xl p-1 border border-border/50 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex bg-muted rounded-lg p-1">
                     <button
                       onClick={() => setActiveTab('prd')}
-                      className={`px-6 py-3 rounded-lg transition-all duration-200 font-medium ${
+                      className={`px-4 py-2 rounded-md transition-all ${
                         activeTab === 'prd' 
-                          ? 'bg-primary text-primary-foreground shadow-md' 
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          ? 'bg-background text-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       PRD
@@ -179,34 +218,34 @@ const Workspace = () => {
                     <button
                       onClick={() => setActiveTab('implementation')}
                       disabled={!currentProject?.implementationPlan}
-                      className={`px-6 py-3 rounded-lg transition-all duration-200 font-medium ${
+                      className={`px-4 py-2 rounded-md transition-all ${
                         activeTab === 'implementation' 
-                          ? 'bg-primary text-primary-foreground shadow-md' 
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed'
+                          ? 'bg-background text-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed'
                       }`}
                     >
                       Implementation Plan
                     </button>
                   </div>
 
-                  {/* Download Buttons */}
-                  <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-xl p-1 border border-border/50 shadow-lg">
+                  {/* Download Button */}
+                  <div className="flex items-center gap-2">
                     {activeTab === 'prd' ? (
                       <>
                         <Button 
                           onClick={() => handleDownload('prd', 'markdown')}
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="flex items-center gap-2 hover:bg-muted/50"
+                          className="flex items-center gap-2"
                         >
                           <Download className="h-4 w-4" />
                           PRD MD
                         </Button>
                         <Button 
                           onClick={() => handleDownload('prd', 'pdf')}
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="flex items-center gap-2 hover:bg-muted/50"
+                          className="flex items-center gap-2"
                         >
                           <Download className="h-4 w-4" />
                           PRD PDF
@@ -216,18 +255,18 @@ const Workspace = () => {
                       <>
                         <Button 
                           onClick={() => handleDownload('plan', 'markdown')}
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="flex items-center gap-2 hover:bg-muted/50"
+                          className="flex items-center gap-2"
                         >
                           <Download className="h-4 w-4" />
                           Plan MD
                         </Button>
                         <Button 
                           onClick={() => handleDownload('plan', 'pdf')}
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="flex items-center gap-2 hover:bg-muted/50"
+                          className="flex items-center gap-2"
                         >
                           <Download className="h-4 w-4" />
                           Plan PDF
@@ -236,9 +275,9 @@ const Workspace = () => {
                     )}
                     <Button 
                       onClick={() => handleDownload('complete')}
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="flex items-center gap-2 hover:bg-muted/50"
+                      className="flex items-center gap-2"
                     >
                       <Download className="h-4 w-4" />
                       Complete
@@ -249,204 +288,162 @@ const Workspace = () => {
                 {/* Panel Content with Slide Animation */}
                 <div className="relative overflow-hidden">
                   {/* PRD Panel */}
-                  <div className={`transition-all duration-500 ease-out ${
-                    activeTab === 'prd' ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 absolute top-0 left-0 w-full'
+                  <div className={`transition-transform duration-300 ease-in-out ${
+                    activeTab === 'prd' ? 'translate-x-0' : '-translate-x-full absolute top-0 left-0 w-full'
                   }`}>
-                    <div className="space-y-6 pb-8">
-                      <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-foreground mb-2">Product Requirements Document</h1>
-                        <div className="w-24 h-1 bg-gradient-primary mx-auto rounded-full"></div>
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-bold text-foreground">Product Requirements Document</h2>
+                      
+                      <Flashcard
+                        title="Overview"
+                        content={currentProject.prd.content?.overview || 'No overview available'}
+                        onEdit={(newContent) => {
+                          // TODO: Implement PRD content editing
+                          console.log('Edit overview:', newContent);
+                        }}
+                      />
+                      
+                      <Flashcard
+                        title="Objectives"
+                        content={Array.isArray(currentProject.prd.content?.objectives) 
+                          ? currentProject.prd.content.objectives.join('\n• ') 
+                          : 'No objectives available'}
+                        onEdit={(newContent) => {
+                          // TODO: Implement PRD content editing
+                          console.log('Edit objectives:', newContent);
+                        }}
+                      />
+                      
+                      <Flashcard
+                        title="Target Audience"
+                        content={`Primary: ${currentProject.prd.content?.targetAudience?.primary || 'Not specified'}\nSecondary: ${currentProject.prd.content?.targetAudience?.secondary || 'Not specified'}`}
+                        onEdit={(newContent) => {
+                          // TODO: Implement PRD content editing
+                          console.log('Edit target audience:', newContent);
+                        }}
+                      />
+                      
+                      <Flashcard
+                        title="Core Features"
+                        content={Array.isArray(currentProject.prd.content?.features) 
+                          ? currentProject.prd.content.features.map((f: any) => `• ${f.name}: ${f.description}`).join('\n')
+                          : 'No features available'}
+                        onEdit={(newContent) => {
+                          // TODO: Implement PRD content editing
+                          console.log('Edit features:', newContent);
+                        }}
+                      />
+                      
+                      <Flashcard
+                        title="Success Metrics"
+                        content={Array.isArray(currentProject.prd.content?.successMetrics) 
+                          ? currentProject.prd.content.successMetrics.join('\n• ')
+                          : 'No success metrics available'}
+                        onEdit={(newContent) => {
+                          // TODO: Implement PRD content editing
+                          console.log('Edit success metrics:', newContent);
+                        }}
+                      />
+
+                      {/* Debug info */}
+                      <div className="text-xs text-muted-foreground mb-4 p-2 bg-muted rounded">
+                        Debug: Has PRD: {currentProject?.prd ? 'Yes' : 'No'}, 
+                        Has Implementation Plan: {currentProject?.implementationPlan ? 'Yes' : 'No'}
                       </div>
                       
-                      <div className="grid gap-6">
-                        <Flashcard
-                          title="Overview"
-                          content={currentProject.prd.content?.overview || 'No overview available'}
-                          onEdit={(newContent) => {
-                            console.log('Edit overview:', newContent);
-                          }}
-                        />
-                        
-                        <Flashcard
-                          title="Objectives"
-                          content={Array.isArray(currentProject.prd.content?.objectives) 
-                            ? currentProject.prd.content.objectives.join('\n• ') 
-                            : 'No objectives available'}
-                          onEdit={(newContent) => {
-                            console.log('Edit objectives:', newContent);
-                          }}
-                        />
-                        
-                        <Flashcard
-                          title="Target Audience"
-                          content={`Primary: ${currentProject.prd.content?.targetAudience?.primary || 'Not specified'}\nSecondary: ${currentProject.prd.content?.targetAudience?.secondary || 'Not specified'}`}
-                          onEdit={(newContent) => {
-                            console.log('Edit target audience:', newContent);
-                          }}
-                        />
-                        
-                        <Flashcard
-                          title="Core Features"
-                          content={Array.isArray(currentProject.prd.content?.features) 
-                            ? currentProject.prd.content.features.map((f: any) => `• ${f.name}: ${f.description}`).join('\n')
-                            : 'No features available'}
-                          onEdit={(newContent) => {
-                            console.log('Edit features:', newContent);
-                          }}
-                        />
-                        
-                        <Flashcard
-                          title="Success Metrics"
-                          content={Array.isArray(currentProject.prd.content?.successMetrics) 
-                            ? currentProject.prd.content.successMetrics.join('\n• ')
-                            : 'No success metrics available'}
-                          onEdit={(newContent) => {
-                            console.log('Edit success metrics:', newContent);
-                          }}
-                        />
-
-                        {/* Generate Implementation Plan Button */}
-                        <div className="flex justify-center pt-6">
+                      {currentProject?.prd && (
+                        <div className="flex justify-center">
                           <Button 
                             onClick={handleGenerateImplementation}
                             variant="gradient"
                             disabled={isGenerating}
-                            className="px-8 py-3 text-lg hover-scale"
+                            className="flex items-center gap-2"
                           >
                             {isGenerating ? (
                               <>
-                                <Sparkles className="mr-2 h-5 w-5 animate-spin" />
+                                <Sparkles className="mr-2 h-4 w-4 animate-spin" />
                                 Generating Implementation Plan...
                               </>
                             ) : currentProject?.implementationPlan ? (
                               <>
                                 View Implementation Plan
-                                <ArrowRight className="ml-2 h-5 w-5" />
+                                <ArrowRight className="h-4 w-4" />
                               </>
                             ) : (
                               <>
                                 Generate MVP Implementation Plan
-                                <ArrowRight className="ml-2 h-5 w-5" />
+                                <ArrowRight className="h-4 w-4" />
                               </>
                             )}
                           </Button>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Implementation Plan Panel */}
                   {currentProject?.implementationPlan && (
-                    <div className={`transition-all duration-500 ease-out ${
-                      activeTab === 'implementation' ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 absolute top-0 left-0 w-full'
+                    <div className={`transition-transform duration-300 ease-in-out ${
+                      activeTab === 'implementation' ? 'translate-x-0' : 'translate-x-full absolute top-0 left-0 w-full'
                     }`}>
-                      <div className="space-y-6 pb-8">
-                        <div className="text-center mb-8">
-                          <h1 className="text-3xl font-bold text-foreground mb-2">Implementation Plan</h1>
-                          <div className="w-24 h-1 bg-gradient-primary mx-auto rounded-full"></div>
-                        </div>
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-foreground">Implementation Plan</h2>
                         
-                        <div className="grid gap-6">
-                          <Flashcard
-                            title="Project Setup"
-                            content={`Tech Stack:\n${JSON.stringify(currentProject.implementationPlan.content?.projectSetup?.techStack, null, 2)}\n\nProject Structure:\n${Array.isArray(currentProject.implementationPlan.content?.projectSetup?.projectStructure) 
-                              ? currentProject.implementationPlan.content.projectSetup.projectStructure.join('\n• ')
-                              : 'No project structure available'}`}
-                            onEdit={(newContent) => {
-                              console.log('Edit project setup:', newContent);
-                            }}
-                          />
-                          
-                          <Flashcard
-                            title="Development Phases"
-                            content={Array.isArray(currentProject.implementationPlan.content?.developmentPhases) 
-                              ? currentProject.implementationPlan.content.developmentPhases.map((phase: any) => 
-                                  `${phase.phase} (${phase.duration})\n${Array.isArray(phase.tasks) ? phase.tasks.map((task: any) => `• ${task.task}: ${task.description}`).join('\n') : 'No tasks'}\n`
-                                ).join('\n')
-                              : 'No development phases available'}
-                            onEdit={(newContent) => {
-                              console.log('Edit development phases:', newContent);
-                            }}
-                          />
-                          
-                          <Flashcard
-                            title="API Design"
-                            content={Array.isArray(currentProject.implementationPlan.content?.apiDesign?.endpoints) 
-                              ? currentProject.implementationPlan.content.apiDesign.endpoints.map((endpoint: any) => 
-                                  `${endpoint.method} ${endpoint.path}\n${endpoint.description}\nAuth: ${endpoint.authentication}\n`
-                                ).join('\n')
-                              : 'No API design available'}
-                            onEdit={(newContent) => {
-                              console.log('Edit API design:', newContent);
-                            }}
-                          />
-                        </div>
+                        <Flashcard
+                          title="Project Setup"
+                          content={`Tech Stack:\n${JSON.stringify(currentProject.implementationPlan.content?.projectSetup?.techStack, null, 2)}\n\nProject Structure:\n${Array.isArray(currentProject.implementationPlan.content?.projectSetup?.projectStructure) 
+                            ? currentProject.implementationPlan.content.projectSetup.projectStructure.join('\n• ')
+                            : 'No project structure available'}`}
+                          onEdit={(newContent) => {
+                            // TODO: Implement implementation plan content editing
+                            console.log('Edit project setup:', newContent);
+                          }}
+                        />
+                        
+                        <Flashcard
+                          title="Development Phases"
+                          content={Array.isArray(currentProject.implementationPlan.content?.developmentPhases) 
+                            ? currentProject.implementationPlan.content.developmentPhases.map((phase: any) => 
+                                `${phase.phase} (${phase.duration})\n${Array.isArray(phase.tasks) ? phase.tasks.map((task: any) => `• ${task.task}: ${task.description}`).join('\n') : 'No tasks'}\n`
+                              ).join('\n')
+                            : 'No development phases available'}
+                          onEdit={(newContent) => {
+                            // TODO: Implement implementation plan content editing
+                            console.log('Edit development phases:', newContent);
+                          }}
+                        />
+                        
+                        <Flashcard
+                          title="API Design"
+                          content={Array.isArray(currentProject.implementationPlan.content?.apiDesign) 
+                            ? currentProject.implementationPlan.content.apiDesign.map((api: any) => 
+                                `${api.endpoint}\nDescription: ${api.description}\nParameters: ${Array.isArray(api.parameters) ? api.parameters.join(', ') : 'None'}\nResponse: ${api.response}\n`
+                              ).join('\n')
+                            : 'No API design available'}
+                          onEdit={(newContent) => {
+                            // TODO: Implement implementation plan content editing
+                            console.log('Edit API design:', newContent);
+                          }}
+                        />
+                        
+                        <Flashcard
+                          title="Database Schema"
+                          content={Array.isArray(currentProject.implementationPlan.content?.databaseSchema) 
+                            ? currentProject.implementationPlan.content.databaseSchema.map((schema: any) => 
+                                `${schema.table}\nFields: ${Array.isArray(schema.fields) ? schema.fields.join(', ') : 'None'}\nRelationships: ${Array.isArray(schema.relationships) ? schema.relationships.join(', ') : 'None'}\n`
+                              ).join('\n')
+                            : 'No database schema available'}
+                          onEdit={(newContent) => {
+                            // TODO: Implement implementation plan content editing
+                            console.log('Edit database schema:', newContent);
+                          }}
+                        />
                       </div>
                     </div>
                   )}
                 </div>
               </div>
-            ) : (
-              /* Empty State */
-              <div className="flex-1 flex flex-col items-center justify-center max-w-3xl mx-auto p-8">
-                <div className="text-center animate-fade-in">
-                  <div className="w-32 h-32 bg-gradient-primary/10 rounded-full flex items-center justify-center mx-auto mb-8">
-                    <Sparkles className="w-16 h-16 text-primary" />
-                  </div>
-                  <h1 className="text-4xl font-bold text-foreground mb-4">
-                    What's your next big idea?
-                  </h1>
-                  <p className="text-lg text-muted-foreground mb-8 max-w-2xl">
-                    Describe your product idea in natural language. Our AI will help you create a structured roadmap.
-                  </p>
-                </div>
-              </div>
             )}
-          </div>
-        </div>
-
-        {/* Fixed Input Area at Bottom */}
-        <div className="border-t border-border/50 bg-background/95 backdrop-blur-sm">
-          <div className="max-w-4xl mx-auto p-6">
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-xl">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                  <label className="text-sm font-medium text-foreground">
-                    {currentProject ? 'Refine your idea or create a new one' : 'Describe your product idea'}
-                  </label>
-                </div>
-                <Textarea
-                  placeholder="Make a website for ecommerce..."
-                  value={currentIdea}
-                  onChange={(e) => setCurrentIdea(e.target.value)}
-                  className="min-h-[100px] text-base resize-none border-border/50 focus:border-primary/50 bg-background/50"
-                />
-                <div className="flex justify-between items-center">
-                  <div className="text-xs text-muted-foreground">
-                    {currentIdea.length}/1000 characters
-                  </div>
-                  <Button 
-                    onClick={handleGeneratePRD}
-                    variant="gradient"
-                    disabled={!currentIdea.trim() || isGenerating}
-                    className="px-8 py-2.5 hover-scale"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Write to Create
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </main>
