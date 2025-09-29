@@ -26,6 +26,7 @@ const Workspace = () => {
   const [currentIdea, setCurrentIdea] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'prd' | 'implementation'>('prd');
+  const [inputPosition, setInputPosition] = useState<'center' | 'bottom'>('center');
 
   useEffect(() => {
     fetchProjects();
@@ -44,6 +45,7 @@ const Workspace = () => {
     setSelectedProjectId('');
     setCurrentProject(null);
     setCurrentIdea('');
+    setInputPosition('center');
   };
 
   const handleSelectProject = (projectId: string) => {
@@ -59,6 +61,7 @@ const Workspace = () => {
     if (!currentIdea.trim()) return;
     
     setIsGenerating(true);
+    setInputPosition('bottom');
     
     try {
       if (currentProject) {
@@ -169,33 +172,39 @@ const Workspace = () => {
               </p>
             </div>
 
-            {/* Idea Input */}
-            <div className="flashcard mb-8">
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="Describe your product idea... (e.g., 'A mobile app that helps people find local restaurants based on their dietary restrictions and preferences')"
-                  value={currentIdea}
-                  onChange={(e) => setCurrentIdea(e.target.value)}
-                  className="min-h-[120px] text-base"
-                />
-                <Button 
-                  onClick={handleGeneratePRD}
-                  variant="gradient"
-                  disabled={!currentIdea.trim() || isGenerating}
-                  className="w-full sm:w-auto"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Write to Create
-                    </>
-                  )}
-                </Button>
+            {/* ChatGPT-style Input Area */}
+            <div className={`transition-all duration-300 ease-in-out ${
+              inputPosition === 'center' 
+                ? 'relative max-w-2xl mx-auto mt-12'
+                : 'fixed bottom-0 left-0 right-0 md:left-80 bg-background/95 border-t border-input/10 z-10'
+            }`}>
+              <div className={`${inputPosition === 'bottom' ? 'max-w-[48rem] mx-auto py-4 px-4' : 'p-3'}`}>
+                <div className="relative bg-background rounded-lg">
+                  <Textarea
+                    placeholder="Describe your product idea..."
+                    value={currentIdea}
+                    onChange={(e) => setCurrentIdea(e.target.value)}
+                    className={`w-full min-h-[20px] max-h-[400px] py-[10px] px-[14px] pr-10 rounded-lg bg-background resize-none overflow-hidden text-[15px] leading-6 border border-black/10 focus:border-black/20 focus:ring-0 ${
+                      inputPosition === 'center' ? 'min-h-[100px]' : ''
+                    }`}
+                    style={{
+                      boxShadow: "0 0 0 1px rgba(0,0,0,0.03), 0 2px 4px rgba(0,0,0,0.03)",
+                      transition: "border-color 0.15s ease, box-shadow 0.15s ease"
+                    }}
+                  />
+                  <Button 
+                    onClick={handleGeneratePRD}
+                    variant="ghost"
+                    disabled={!currentIdea.trim() || isGenerating}
+                    className={`absolute right-2 bottom-1.5 p-0 w-7 h-7 bg-primary hover:bg-primary/90 disabled:bg-primary/40 text-primary-foreground rounded-[6px] transition-colors flex items-center justify-center`}
+                  >
+                    {isGenerating ? (
+                      <Sparkles className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
 
