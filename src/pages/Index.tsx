@@ -38,7 +38,11 @@ const Index = () => {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full sm:w-auto">
+                <Button 
+                  variant="outline" 
+                  className="w-full sm:w-auto"
+                  onClick={() => document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' })}
+                >
                   See How It Works
                 </Button>
               </div>
@@ -59,7 +63,7 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-accent/30">
+      <section id="demo-section" className="py-20 px-4 bg-accent/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-foreground mb-4">
@@ -73,38 +77,6 @@ const Index = () => {
           {/* Animated Demo */}
           <div className="mb-16">
             <AnimatedDemo />
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="flashcard text-center">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Lightbulb className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Capture Ideas</h3>
-              <p className="text-muted-foreground">
-                Simply describe your idea in natural language. No templates, no structure required.
-              </p>
-            </div>
-            
-            <div className="flashcard text-center">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-                <FileText className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Generate PRD</h3>
-              <p className="text-muted-foreground">
-                Get a structured Product Requirements Document with problems, goals, and features.
-              </p>
-            </div>
-            
-            <div className="flashcard text-center">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Rocket className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Plan Implementation</h3>
-              <p className="text-muted-foreground">
-                Receive detailed implementation plans with tasks, tech stack, and timelines.
-              </p>
-            </div>
           </div>
         </div>
       </section>
