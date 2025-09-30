@@ -91,8 +91,41 @@ export const Flashcard: React.FC<FlashcardProps> = ({
               </div>
             </div>
           ) : (
-            <div className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">
-              {content}
+            <div className="text-muted-foreground space-y-4">
+              {content.split('\n').map((line, index) => {
+                // Check if it's a list item (starts with • or - or *)
+                if (line.trim().match(/^[•\-\*]\s/)) {
+                  return (
+                    <div key={index} className="flex items-start space-x-2 pl-2">
+                      <span className="text-primary mt-1.5">•</span>
+                      <p className="text-sm leading-relaxed flex-1">{line.trim().replace(/^[•\-\*]\s/, '')}</p>
+                    </div>
+                  );
+                }
+                // Check if it's a key-value pair (contains : )
+                else if (line.includes(':')) {
+                  const [key, value] = line.split(':').map(s => s.trim());
+                  return (
+                    <div key={index} className="flex flex-col space-y-1">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        {key}
+                      </span>
+                      <p className="text-sm text-foreground font-medium pl-2">
+                        {value}
+                      </p>
+                    </div>
+                  );
+                }
+                // Regular text
+                else if (line.trim()) {
+                  return (
+                    <p key={index} className="text-sm leading-relaxed text-foreground/80">
+                      {line}
+                    </p>
+                  );
+                }
+                return null;
+              })}
             </div>
           )}
           {children}
