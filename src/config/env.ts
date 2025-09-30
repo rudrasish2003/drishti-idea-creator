@@ -4,4 +4,3 @@ export const config = {
   APP_NAME: 'Drishti.io',
   APP_VERSION: '1.0.0',
 } as const;
-
