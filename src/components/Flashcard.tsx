@@ -9,6 +9,7 @@ interface FlashcardProps {
   isEditable?: boolean;
   onEdit?: (newContent: string) => void;
   className?: string;
+  style?: React.CSSProperties;
   children?: React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   isEditable = true,
   onEdit,
   className = "",
+  style,
   children 
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -38,7 +40,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   };
 
   return (
-    <div className={`p-4 rounded-xl border transition-all duration-300 hover:scale-[1.02] animate-fade-in ${className}`}>
+    <div className={`p-4 rounded-xl border transition-all duration-300 hover:scale-[1.02] animate-fade-in ${className}`} style={style}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold text-foreground">{title}</h3>
         <div className="flex items-center gap-1">

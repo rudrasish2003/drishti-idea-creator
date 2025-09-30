@@ -230,7 +230,7 @@ const Workspace = () => {
                           : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                       }`}
                     >
-                      📄 PRD
+                      PRD
                     </button>
                     <button
                       onClick={() => setActiveTab('implementation')}
@@ -241,7 +241,7 @@ const Workspace = () => {
                           : 'text-muted-foreground hover:text-foreground hover:bg-background/50 disabled:opacity-40 disabled:cursor-not-allowed'
                       }`}
                     >
-                      ⚙️ Implementation
+                      Implementation
                     </button>
                   </div>
 
@@ -268,13 +268,13 @@ const Workspace = () => {
                               onClick={() => handleDownload('prd', 'markdown')}
                               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors"
                             >
-                              📄 PRD (Markdown)
+                              PRD (Markdown)
                             </button>
                             <button 
                               onClick={() => handleDownload('prd', 'pdf')}
                               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors"
                             >
-                              📄 PRD (PDF)
+                              PRD (PDF)
                             </button>
                           </>
                         ) : (
@@ -283,13 +283,13 @@ const Workspace = () => {
                               onClick={() => handleDownload('plan', 'markdown')}
                               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors"
                             >
-                              ⚙️ Plan (Markdown)
+                              Plan (Markdown)
                             </button>
                             <button 
                               onClick={() => handleDownload('plan', 'pdf')}
                               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors"
                             >
-                              ⚙️ Plan (PDF)
+                              Plan (PDF)
                             </button>
                           </>
                         )}
@@ -298,7 +298,7 @@ const Workspace = () => {
                           onClick={() => handleDownload('complete')}
                           className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors"
                         >
-                          📦 Complete Project
+                          Complete Project
                         </button>
                       </div>
                     </div>
@@ -313,14 +313,14 @@ const Workspace = () => {
                   }`}>
                     <div className="space-y-4">
                       <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                        📄 Product Requirements Document
+                        Product Requirements Document
                       </h2>
                       
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="space-y-4">
                         <Flashcard
-                          title="🎯 Overview"
+                          title="Overview"
                           content={currentProject.prd.content?.overview || 'No overview available'}
-                          className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
                           onEdit={(newContent) => {
                             // TODO: Implement PRD content editing
                             console.log('Edit overview:', newContent);
@@ -328,11 +328,12 @@ const Workspace = () => {
                         />
                         
                         <Flashcard
-                          title="🚀 Objectives"
+                          title="Objectives"
                           content={Array.isArray(currentProject.prd.content?.objectives) 
                             ? currentProject.prd.content.objectives.join('\n• ') 
                             : 'No objectives available'}
-                          className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
+                          style={{ animationDelay: '0.1s' }}
                           onEdit={(newContent) => {
                             // TODO: Implement PRD content editing
                             console.log('Edit objectives:', newContent);
@@ -340,9 +341,10 @@ const Workspace = () => {
                         />
                         
                         <Flashcard
-                          title="👥 Target Audience"
+                          title="Target Audience"
                           content={`Primary: ${currentProject.prd.content?.targetAudience?.primary || 'Not specified'}\nSecondary: ${currentProject.prd.content?.targetAudience?.secondary || 'Not specified'}`}
-                          className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
+                          style={{ animationDelay: '0.2s' }}
                           onEdit={(newContent) => {
                             // TODO: Implement PRD content editing
                             console.log('Edit target audience:', newContent);
@@ -350,11 +352,12 @@ const Workspace = () => {
                         />
                         
                         <Flashcard
-                          title="⚡ Core Features"
+                          title="Core Features"
                           content={Array.isArray(currentProject.prd.content?.features) 
                             ? currentProject.prd.content.features.map((f: any) => `• ${f.name}: ${f.description}`).join('\n')
                             : 'No features available'}
-                          className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
+                          style={{ animationDelay: '0.3s' }}
                           onEdit={(newContent) => {
                             // TODO: Implement PRD content editing
                             console.log('Edit features:', newContent);
@@ -363,11 +366,12 @@ const Workspace = () => {
                       </div>
                       
                       <Flashcard
-                        title="📊 Success Metrics"
+                        title="Success Metrics"
                         content={Array.isArray(currentProject.prd.content?.successMetrics) 
                           ? currentProject.prd.content.successMetrics.join('\n• ')
                           : 'No success metrics available'}
-                        className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
+                        style={{ animationDelay: '0.4s' }}
                         onEdit={(newContent) => {
                           // TODO: Implement PRD content editing
                           console.log('Edit success metrics:', newContent);
@@ -412,16 +416,16 @@ const Workspace = () => {
                     }`}>
                       <div className="space-y-4">
                         <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                          ⚙️ Implementation Plan
+                          Implementation Plan
                         </h2>
                         
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="space-y-4">
                           <Flashcard
-                            title="🔧 Project Setup"
+                            title="Project Setup"
                             content={`Tech Stack:\n${JSON.stringify(currentProject.implementationPlan.content?.projectSetup?.techStack, null, 2)}\n\nProject Structure:\n${Array.isArray(currentProject.implementationPlan.content?.projectSetup?.projectStructure) 
                               ? currentProject.implementationPlan.content.projectSetup.projectStructure.join('\n• ')
                               : 'No project structure available'}`}
-                            className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                            className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
                             onEdit={(newContent) => {
                               // TODO: Implement implementation plan content editing
                               console.log('Edit project setup:', newContent);
@@ -429,29 +433,29 @@ const Workspace = () => {
                           />
                           
                           <Flashcard
-                            title="📅 Development Phases"
+                            title="Development Phases"
                             content={Array.isArray(currentProject.implementationPlan.content?.developmentPhases) 
                               ? currentProject.implementationPlan.content.developmentPhases.map((phase: any) => 
                                   `${phase.phase} (${phase.duration})\n${Array.isArray(phase.tasks) ? phase.tasks.map((task: any) => `• ${task.task}: ${task.description}`).join('\n') : 'No tasks'}\n`
                                 ).join('\n')
                               : 'No development phases available'}
-                            className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                            className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
+                            style={{ animationDelay: '0.1s' }}
                             onEdit={(newContent) => {
                               // TODO: Implement implementation plan content editing
                               console.log('Edit development phases:', newContent);
                             }}
                           />
-                        </div>
                         
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                           <Flashcard
-                            title="🔌 API Design"
+                            title="API Design"
                             content={Array.isArray(currentProject.implementationPlan.content?.apiDesign) 
                               ? currentProject.implementationPlan.content.apiDesign.map((api: any) => 
                                   `${api.endpoint}\nDescription: ${api.description}\nParameters: ${Array.isArray(api.parameters) ? api.parameters.join(', ') : 'None'}\nResponse: ${api.response}\n`
                                 ).join('\n')
                               : 'No API design available'}
-                            className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                            className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
+                            style={{ animationDelay: '0.2s' }}
                             onEdit={(newContent) => {
                               // TODO: Implement implementation plan content editing
                               console.log('Edit API design:', newContent);
@@ -459,13 +463,14 @@ const Workspace = () => {
                           />
                           
                           <Flashcard
-                            title="🗄️ Database Schema"
+                            title="Database Schema"
                             content={Array.isArray(currentProject.implementationPlan.content?.databaseSchema) 
                               ? currentProject.implementationPlan.content.databaseSchema.map((schema: any) => 
                                   `${schema.table}\nFields: ${Array.isArray(schema.fields) ? schema.fields.join(', ') : 'None'}\nRelationships: ${Array.isArray(schema.relationships) ? schema.relationships.join(', ') : 'None'}\n`
                                 ).join('\n')
                               : 'No database schema available'}
-                            className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                            className="bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
+                            style={{ animationDelay: '0.3s' }}
                             onEdit={(newContent) => {
                               // TODO: Implement implementation plan content editing
                               console.log('Edit database schema:', newContent);
