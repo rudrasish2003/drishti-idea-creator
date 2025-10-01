@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Download } from 'lucide-react';
+import { ArrowRight, Sparkles, Download, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sidebar } from '@/components/Sidebar';
 import { Flashcard } from '@/components/Flashcard';
+import { LoadingStages } from '@/components/LoadingStages';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/api';
@@ -26,6 +27,8 @@ const Workspace = () => {
   const [currentIdea, setCurrentIdea] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'prd' | 'implementation'>('prd');
+  const [showCards, setShowCards] = useState(false);
+  const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -44,6 +47,8 @@ const Workspace = () => {
     setSelectedProjectId('');
     setCurrentProject(null);
     setCurrentIdea('');
+    setShowCards(false);
+    setHasStartedGeneration(false);
   };
 
   const handleSelectProject = (projectId: string) => {
@@ -52,6 +57,8 @@ const Workspace = () => {
       setSelectedProjectId(projectId);
       setCurrentProject(project);
       setCurrentIdea(project.idea);
+      setShowCards(!!project.prd);
+      setHasStartedGeneration(!!project.prd);
     }
   };
 
@@ -59,6 +66,8 @@ const Workspace = () => {
     if (!currentIdea.trim()) return;
     
     setIsGenerating(true);
+    setHasStartedGeneration(true);
+    setShowCards(false);
     
     try {
       if (currentProject) {
@@ -80,9 +89,15 @@ const Workspace = () => {
         toast.success('Project created and PRD generated successfully!');
         console.log('PRD generated for new project');
       }
+      
+      // Show cards with delay after generation
+      setTimeout(() => {
+        setShowCards(true);
+      }, 500);
     } catch (error: any) {
       toast.error(error.message || 'Failed to generate PRD');
       console.error('PRD generation error:', error);
+      setHasStartedGeneration(false);
     } finally {
       setIsGenerating(false);
     }
@@ -151,57 +166,84 @@ const Workspace = () => {
       />
       
       <main className="flex-1 overflow-hidden">
-        {/* Figma-style Canvas with dotted grid */}
         <div className="h-full bg-background relative overflow-auto" 
              style={{
                backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px)',
                backgroundSize: '20px 20px'
              }}>
           
-          <div className="max-w-4xl mx-auto p-8">
-            {/* Hero Section */}
-            <div className="text-center py-12">
-              <h1 className="text-3xl font-bold text-foreground mb-4">
-                What's your next big idea?
-              </h1>
-              <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-                Describe your product idea in natural language. Our AI will help you create a structured roadmap.
-              </p>
-            </div>
+          <div className={`transition-all duration-500 ${hasStartedGeneration ? 'max-w-4xl mx-auto p-8' : 'flex items-center justify-center min-h-screen px-8'}`}>
+            {/* ChatGPT-style centered input */}
+            {!hasStartedGeneration && (
+              <div className="w-full max-w-3xl space-y-8 animate-fade-in">
+                <div className="text-center space-y-4">
+                  <h1 className="text-4xl font-bold text-foreground">
+                    What's your next big idea?
+                  </h1>
+                  <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                    Describe your product idea and we'll help you create a structured roadmap
+                  </p>
+                </div>
 
-            {/* Idea Input */}
-            <div className="flashcard mb-8">
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="Describe your product idea... (e.g., 'A mobile app that helps people find local restaurants based on their dietary restrictions and preferences')"
-                  value={currentIdea}
-                  onChange={(e) => setCurrentIdea(e.target.value)}
-                  className="min-h-[120px] text-base"
-                />
-                <Button 
-                  onClick={handleGeneratePRD}
-                  variant="gradient"
-                  disabled={!currentIdea.trim() || isGenerating}
-                  className="w-full sm:w-auto"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Write to Create
-                    </>
-                  )}
-                </Button>
+                <div className="relative">
+                  <Textarea
+                    placeholder="Describe your product idea..."
+                    value={currentIdea}
+                    onChange={(e) => setCurrentIdea(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleGeneratePRD();
+                      }
+                    }}
+                    className="min-h-[120px] text-base bg-card border-border rounded-2xl px-6 py-4 pr-14 resize-none focus-visible:ring-2 focus-visible:ring-primary shadow-lg"
+                  />
+                  <Button
+                    onClick={handleGeneratePRD}
+                    disabled={!currentIdea.trim() || isGenerating}
+                    size="icon"
+                    className="absolute bottom-4 right-4 rounded-xl bg-primary hover:bg-primary-dark"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Moved-up input after generation starts */}
+            {hasStartedGeneration && (
+              <div className="mb-8 animate-slide-up">
+                <div className="relative bg-card border border-border rounded-2xl shadow-md">
+                  <Textarea
+                    placeholder="Describe your product idea..."
+                    value={currentIdea}
+                    onChange={(e) => setCurrentIdea(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleGeneratePRD();
+                      }
+                    }}
+                    className="min-h-[80px] text-base border-0 rounded-2xl px-6 py-4 pr-14 resize-none focus-visible:ring-0"
+                  />
+                  <Button
+                    onClick={handleGeneratePRD}
+                    disabled={!currentIdea.trim() || isGenerating}
+                    size="icon"
+                    className="absolute bottom-4 right-4 rounded-xl bg-primary hover:bg-primary-dark"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Loading Animation */}
+            {isGenerating && <LoadingStages />}
 
             {/* Slider Tabs and Content */}
-            {currentProject?.prd && (
-              <div className="space-y-6">
+            {currentProject?.prd && showCards && (
+              <div className="space-y-6 animate-fade-in">
                 {/* Tab Navigation */}
                 <div className="flex items-center justify-between">
                   <div className="flex bg-muted rounded-lg p-1">
@@ -301,6 +343,7 @@ const Workspace = () => {
                           // TODO: Implement PRD content editing
                           console.log('Edit overview:', newContent);
                         }}
+                        style={{ animationDelay: '0.1s' }}
                       />
                       
                       <Flashcard
@@ -312,6 +355,7 @@ const Workspace = () => {
                           // TODO: Implement PRD content editing
                           console.log('Edit objectives:', newContent);
                         }}
+                        style={{ animationDelay: '0.2s' }}
                       />
                       
                       <Flashcard
@@ -321,6 +365,7 @@ const Workspace = () => {
                           // TODO: Implement PRD content editing
                           console.log('Edit target audience:', newContent);
                         }}
+                        style={{ animationDelay: '0.3s' }}
                       />
                       
                       <Flashcard
@@ -332,6 +377,7 @@ const Workspace = () => {
                           // TODO: Implement PRD content editing
                           console.log('Edit features:', newContent);
                         }}
+                        style={{ animationDelay: '0.4s' }}
                       />
                       
                       <Flashcard
@@ -343,6 +389,7 @@ const Workspace = () => {
                           // TODO: Implement PRD content editing
                           console.log('Edit success metrics:', newContent);
                         }}
+                        style={{ animationDelay: '0.5s' }}
                       />
 
                       {/* Debug info */}
@@ -398,6 +445,7 @@ const Workspace = () => {
                             // TODO: Implement implementation plan content editing
                             console.log('Edit project setup:', newContent);
                           }}
+                          style={{ animationDelay: '0.1s' }}
                         />
                         
                         <Flashcard
@@ -411,6 +459,7 @@ const Workspace = () => {
                             // TODO: Implement implementation plan content editing
                             console.log('Edit development phases:', newContent);
                           }}
+                          style={{ animationDelay: '0.2s' }}
                         />
                         
                         <Flashcard
@@ -424,6 +473,7 @@ const Workspace = () => {
                             // TODO: Implement implementation plan content editing
                             console.log('Edit API design:', newContent);
                           }}
+                          style={{ animationDelay: '0.3s' }}
                         />
                         
                         <Flashcard
@@ -437,6 +487,7 @@ const Workspace = () => {
                             // TODO: Implement implementation plan content editing
                             console.log('Edit database schema:', newContent);
                           }}
+                          style={{ animationDelay: '0.4s' }}
                         />
                       </div>
                     </div>

@@ -10,6 +10,7 @@ interface FlashcardProps {
   onEdit?: (newContent: string) => void;
   className?: string;
   children?: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 export const Flashcard: React.FC<FlashcardProps> = ({ 
@@ -19,7 +20,8 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   isEditable = true,
   onEdit,
   className = "",
-  children 
+  children,
+  style
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -38,7 +40,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   };
 
   return (
-    <div className={`flashcard fade-in ${className}`}>
+    <div className={`flashcard fade-in ${className}`} style={style}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         <div className="flex items-center gap-2">
