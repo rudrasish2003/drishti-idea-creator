@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Download, Send } from 'lucide-react';
+import { ArrowRight, Sparkles, Download, Send, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sidebar } from '@/components/Sidebar';
 import { Flashcard } from '@/components/Flashcard';
 import { LoadingStages } from '@/components/LoadingStages';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useProjects } from '@/contexts/ProjectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/api';
@@ -90,10 +97,8 @@ const Workspace = () => {
         console.log('PRD generated for new project');
       }
       
-      // Show cards with delay after generation
-      setTimeout(() => {
-        setShowCards(true);
-      }, 500);
+      // Show cards immediately after generation
+      setShowCards(true);
     } catch (error: any) {
       toast.error(error.message || 'Failed to generate PRD');
       console.error('PRD generation error:', error);
@@ -263,68 +268,54 @@ const Workspace = () => {
                       className={`px-4 py-2 rounded-md transition-all ${
                         activeTab === 'implementation' 
                           ? 'bg-background text-foreground shadow-sm' 
-                          : 'text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed'
+                          : !currentProject?.implementationPlan
+                          ? 'text-muted-foreground/50 cursor-not-allowed'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       Implementation Plan
                     </button>
                   </div>
 
-                  {/* Download Button */}
-                  <div className="flex items-center gap-2">
-                    {activeTab === 'prd' ? (
-                      <>
-                        <Button 
-                          onClick={() => handleDownload('prd', 'markdown')}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <Download className="h-4 w-4" />
-                          PRD MD
-                        </Button>
-                        <Button 
-                          onClick={() => handleDownload('prd', 'pdf')}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <Download className="h-4 w-4" />
-                          PRD PDF
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button 
-                          onClick={() => handleDownload('plan', 'markdown')}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <Download className="h-4 w-4" />
-                          Plan MD
-                        </Button>
-                        <Button 
-                          onClick={() => handleDownload('plan', 'pdf')}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <Download className="h-4 w-4" />
-                          Plan PDF
-                        </Button>
-                      </>
-                    )}
-                    <Button 
-                      onClick={() => handleDownload('complete')}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Complete
-                    </Button>
-                  </div>
+                  {/* Single Download Button with Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {activeTab === 'prd' ? (
+                        <>
+                          <DropdownMenuItem onClick={() => handleDownload('prd', 'markdown')}>
+                            PRD (Markdown)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload('prd', 'pdf')}>
+                            PRD (PDF)
+                          </DropdownMenuItem>
+                        </>
+                      ) : (
+                        <>
+                          <DropdownMenuItem onClick={() => handleDownload('plan', 'markdown')}>
+                            Implementation Plan (MD)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload('plan', 'pdf')}>
+                            Implementation Plan (PDF)
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleDownload('complete')}>
+                        Complete Project
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 {/* Panel Content with Slide Animation */}

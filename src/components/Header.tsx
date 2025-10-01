@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onOpenSignIn?: () => void;
+  onOpenSignUp?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenSignIn, onOpenSignUp }) => {
   const location = useLocation();
   const isWorkspace = location.pathname === '/workspace';
   const { isAuthenticated, user, logout } = useAuth();
@@ -32,6 +37,11 @@ export const Header: React.FC = () => {
                   <span>Logout</span>
                 </Button>
               </div>
+            ) : onOpenSignIn && onOpenSignUp ? (
+              <>
+                <Button variant="ghost" onClick={onOpenSignIn}>Sign In</Button>
+                <Button variant="gradient" onClick={onOpenSignUp}>Sign Up</Button>
+              </>
             ) : (
               <>
                 <Link to="/signin">
