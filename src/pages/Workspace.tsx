@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Sidebar } from '@/components/Sidebar';
 import { Flashcard } from '@/components/Flashcard';
 import { LoadingStages } from '@/components/LoadingStages';
+import { ImplementationRoadmap } from '@/components/ImplementationRoadmap';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,7 @@ const Workspace = () => {
   const [activeTab, setActiveTab] = useState<'prd' | 'implementation'>('prd');
   const [showCards, setShowCards] = useState(false);
   const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
+  const [roadmapPhases, setRoadmapPhases] = useState<any[]>([]);
 
   useEffect(() => {
     fetchProjects();
@@ -124,6 +126,104 @@ const Workspace = () => {
     try {
       await generateImplementationPlan(currentProject._id);
       await fetchProjects(); // Refresh projects to get updated data
+      
+      // Mock roadmap data - in production this would come from the API
+      const mockRoadmap = [
+        {
+          id: 'phase-1',
+          title: 'Foundation & Setup',
+          description: 'Set up project infrastructure and core dependencies',
+          stages: [
+            {
+              id: 'stage-1-1',
+              title: 'Project Initialization',
+              checkpoints: [
+                {
+                  id: 'cp-1-1-1',
+                  title: 'Initialize React + Vite Project',
+                  description: 'Create a new project with React and Vite',
+                  code: 'npm create vite@latest my-app -- --template react-ts\ncd my-app\nnpm install',
+                  testing: 'Run npm run dev and verify the app starts successfully on localhost'
+                },
+                {
+                  id: 'cp-1-1-2',
+                  title: 'Install Core Dependencies',
+                  description: 'Add Tailwind CSS, React Router, and essential libraries',
+                  code: 'npm install tailwindcss postcss autoprefixer\nnpm install react-router-dom\nnpm install @tanstack/react-query',
+                  testing: 'Check package.json to ensure all dependencies are listed'
+                }
+              ]
+            },
+            {
+              id: 'stage-1-2',
+              title: 'Project Structure',
+              checkpoints: [
+                {
+                  id: 'cp-1-2-1',
+                  title: 'Create Folder Structure',
+                  description: 'Set up organized folders for components, pages, hooks, and utilities',
+                  code: 'mkdir -p src/components src/pages src/hooks src/lib src/contexts',
+                  testing: 'Verify all folders are created in the src directory'
+                }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'phase-2',
+          title: 'Core Features Development',
+          description: 'Build the main features and functionality',
+          stages: [
+            {
+              id: 'stage-2-1',
+              title: 'Authentication Setup',
+              checkpoints: [
+                {
+                  id: 'cp-2-1-1',
+                  title: 'Create Auth Context',
+                  description: 'Set up authentication context for state management',
+                  code: 'export const AuthContext = createContext<AuthContextType | null>(null);\n\nexport const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {\n  const [user, setUser] = useState<User | null>(null);\n  return <AuthContext.Provider value={{ user, setUser }}>{children}</AuthContext.Provider>;\n};',
+                  testing: 'Wrap your app with AuthProvider and test that context is accessible'
+                },
+                {
+                  id: 'cp-2-1-2',
+                  title: 'Build Login/Signup Forms',
+                  description: 'Create forms with validation',
+                  code: 'const LoginForm = () => {\n  const [email, setEmail] = useState("");\n  const [password, setPassword] = useState("");\n  // Form implementation\n};',
+                  testing: 'Test form validation and submission flow'
+                }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'phase-3',
+          title: 'Testing & Deployment',
+          description: 'Ensure quality and deploy the application',
+          stages: [
+            {
+              id: 'stage-3-1',
+              title: 'Quality Assurance',
+              checkpoints: [
+                {
+                  id: 'cp-3-1-1',
+                  title: 'Cross-browser Testing',
+                  description: 'Test on Chrome, Firefox, Safari, and Edge',
+                  testing: 'Open the app in each browser and verify all features work correctly'
+                },
+                {
+                  id: 'cp-3-1-2',
+                  title: 'Mobile Responsiveness',
+                  description: 'Test on different screen sizes',
+                  testing: 'Use browser dev tools to test mobile, tablet, and desktop views'
+                }
+              ]
+            }
+          ]
+        }
+      ];
+      
+      setRoadmapPhases(mockRoadmap);
       toast.success('Implementation plan generated successfully!');
       setActiveTab('implementation');
     } catch (error: any) {
@@ -425,61 +525,16 @@ const Workspace = () => {
                       activeTab === 'implementation' ? 'translate-x-0' : 'translate-x-full absolute top-0 left-0 w-full'
                     }`}>
                       <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-foreground">Implementation Plan</h2>
+                        <h2 className="text-2xl font-bold text-foreground">Implementation Roadmap</h2>
                         
-                        <Flashcard
-                          title="Project Setup"
-                          content={`Tech Stack:\n${JSON.stringify(currentProject.implementationPlan.content?.projectSetup?.techStack, null, 2)}\n\nProject Structure:\n${Array.isArray(currentProject.implementationPlan.content?.projectSetup?.projectStructure) 
-                            ? currentProject.implementationPlan.content.projectSetup.projectStructure.join('\n• ')
-                            : 'No project structure available'}`}
-                          onEdit={(newContent) => {
-                            // TODO: Implement implementation plan content editing
-                            console.log('Edit project setup:', newContent);
-                          }}
-                          style={{ animationDelay: '0.1s' }}
-                        />
-                        
-                        <Flashcard
-                          title="Development Phases"
-                          content={Array.isArray(currentProject.implementationPlan.content?.developmentPhases) 
-                            ? currentProject.implementationPlan.content.developmentPhases.map((phase: any) => 
-                                `${phase.phase} (${phase.duration})\n${Array.isArray(phase.tasks) ? phase.tasks.map((task: any) => `• ${task.task}: ${task.description}`).join('\n') : 'No tasks'}\n`
-                              ).join('\n')
-                            : 'No development phases available'}
-                          onEdit={(newContent) => {
-                            // TODO: Implement implementation plan content editing
-                            console.log('Edit development phases:', newContent);
-                          }}
-                          style={{ animationDelay: '0.2s' }}
-                        />
-                        
-                        <Flashcard
-                          title="API Design"
-                          content={Array.isArray(currentProject.implementationPlan.content?.apiDesign) 
-                            ? currentProject.implementationPlan.content.apiDesign.map((api: any) => 
-                                `${api.endpoint}\nDescription: ${api.description}\nParameters: ${Array.isArray(api.parameters) ? api.parameters.join(', ') : 'None'}\nResponse: ${api.response}\n`
-                              ).join('\n')
-                            : 'No API design available'}
-                          onEdit={(newContent) => {
-                            // TODO: Implement implementation plan content editing
-                            console.log('Edit API design:', newContent);
-                          }}
-                          style={{ animationDelay: '0.3s' }}
-                        />
-                        
-                        <Flashcard
-                          title="Database Schema"
-                          content={Array.isArray(currentProject.implementationPlan.content?.databaseSchema) 
-                            ? currentProject.implementationPlan.content.databaseSchema.map((schema: any) => 
-                                `${schema.table}\nFields: ${Array.isArray(schema.fields) ? schema.fields.join(', ') : 'None'}\nRelationships: ${Array.isArray(schema.relationships) ? schema.relationships.join(', ') : 'None'}\n`
-                              ).join('\n')
-                            : 'No database schema available'}
-                          onEdit={(newContent) => {
-                            // TODO: Implement implementation plan content editing
-                            console.log('Edit database schema:', newContent);
-                          }}
-                          style={{ animationDelay: '0.4s' }}
-                        />
+                        {roadmapPhases.length > 0 ? (
+                          <ImplementationRoadmap phases={roadmapPhases} />
+                        ) : (
+                          <div className="text-center text-muted-foreground py-12 bg-muted/30 rounded-lg">
+                            <p className="text-lg">No roadmap available yet</p>
+                            <p className="text-sm mt-2">Generate an implementation plan to see the roadmap</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
