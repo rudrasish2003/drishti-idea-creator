@@ -123,19 +123,19 @@ const Workspace = () => {
     
     return implementationPlan.developmentPhases.map((phase: any, phaseIndex: number) => ({
       id: `phase-${phaseIndex + 1}`,
-      title: phase.phase,
+      title: `${phase.phase}`,
       description: `Duration: ${phase.duration}`,
-      stages: phase.tasks.map((task: any, taskIndex: number) => ({
-        id: `phase-${phaseIndex + 1}-stage-${taskIndex + 1}`,
-        title: task.task,
-        checkpoints: [{
-          id: `phase-${phaseIndex + 1}-stage-${taskIndex + 1}-checkpoint-1`,
+      stages: [{
+        id: `phase-${phaseIndex + 1}-stage-1`,
+        title: phase.phase,
+        checkpoints: phase.tasks.map((task: any, taskIndex: number) => ({
+          id: `phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
           title: task.task,
           description: task.description,
           code: task.dependencies?.length > 0 ? `Dependencies: ${task.dependencies.join(', ')}` : undefined,
-          testing: `Estimated time: ${task.estimatedHours}`
-        }]
-      }))
+          testing: `Estimated: ${task.estimatedHours}`
+        }))
+      }]
     }));
   };
 
