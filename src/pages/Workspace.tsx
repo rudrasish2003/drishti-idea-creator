@@ -151,6 +151,7 @@ const Workspace = () => {
     }
     
     setIsGenerating(true);
+    setShowCards(false);
     
     try {
       await generateImplementationPlan(currentProject._id);
@@ -170,6 +171,7 @@ const Workspace = () => {
       
       toast.success('Implementation plan generated successfully!');
       setActiveTab('implementation');
+      setShowCards(true);
     } catch (error: any) {
       console.error('Implementation generation error:', error);
       toast.error(error.message || 'Failed to generate implementation plan');
@@ -287,8 +289,12 @@ const Workspace = () => {
               </div>
             )}
 
-            {/* Loading Animation */}
-            {isGenerating && <LoadingStages />}
+            {/* Loading Animation - Centered */}
+            {isGenerating && (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <LoadingStages />
+              </div>
+            )}
 
             {/* Slider Tabs and Content */}
             {currentProject?.prd && showCards && (
