@@ -17,7 +17,7 @@ import { useProjects } from '@/contexts/ProjectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/api';
 import { toast } from 'sonner';
-
+ 
 const Workspace = () => {
   const { 
     projects, 
@@ -38,28 +38,36 @@ const Workspace = () => {
   const [showCards, setShowCards] = useState(false);
   const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
   const [roadmapPhases, setRoadmapPhases] = useState<any[]>([]);
-
+ 
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
-
-  // Debug logging
+ 
   useEffect(() => {
     if (currentProject) {
       console.log('Current project:', currentProject);
       console.log('Has PRD:', !!currentProject.prd);
       console.log('Has Implementation Plan:', !!currentProject.implementationPlan);
+      
+      // Load roadmap when project changes
+      if (currentProject.implementationPlan?.content) {
+        console.log('Implementation Plan Content:', currentProject.implementationPlan.content);
+        const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content);
+        console.log('Transformed Phases:', phases);
+        setRoadmapPhases(phases);
+      }
     }
   }, [currentProject]);
-
+ 
   const handleNewProject = () => {
     setSelectedProjectId('');
     setCurrentProject(null);
     setCurrentIdea('');
     setShowCards(false);
     setHasStartedGeneration(false);
+    setRoadmapPhases([]);
   };
-
+ 
   const handleSelectProject = (projectId: string) => {
     const project = projects.find(p => p._id === projectId);
     if (project) {
@@ -78,7 +86,7 @@ const Workspace = () => {
       }
     }
   };
-
+ 
   const handleGeneratePRD = async () => {
     if (!currentIdea.trim()) return;
     
@@ -86,28 +94,33 @@ const Workspace = () => {
     setHasStartedGeneration(true);
     setShowCards(false);
     
+    let projectId = currentProject?._id;
+    
     try {
       if (currentProject) {
-        // Generate PRD for existing project
         await generatePRD(currentProject._id);
+        projectId = currentProject._id;
         toast.success('PRD generated successfully!');
-        console.log('PRD generated for existing project');
       } else {
-        // Create new project and generate PRD
         const newProject = await createProject(
           currentIdea.slice(0, 50) + (currentIdea.length > 50 ? '...' : ''),
           currentIdea
         );
-        setCurrentProject(newProject);
+        projectId = newProject._id;
         setSelectedProjectId(newProject._id);
         
-        // Generate PRD for the new project
         await generatePRD(newProject._id);
         toast.success('Project created and PRD generated successfully!');
-        console.log('PRD generated for new project');
       }
       
-      // Show cards immediately after generation
+      // Fetch the updated project to ensure we have the latest PRD
+      if (projectId) {
+        const { project: updatedProject } = await apiService.getProject(projectId);
+        setCurrentProject(updatedProject);
+      }
+      
+      // Stay on PRD tab
+      setActiveTab('prd');
       setShowCards(true);
     } catch (error: any) {
       toast.error(error.message || 'Failed to generate PRD');
@@ -117,28 +130,47 @@ const Workspace = () => {
       setIsGenerating(false);
     }
   };
-
+ 
+  /**
+   * Transform implementation plan JSON to roadmap format
+   * Handles both old format (developmentPhases) and new format (phases)
+   */
   const transformImplementationToRoadmap = (implementationPlan: any) => {
-    if (!implementationPlan?.developmentPhases) return [];
+    console.log('Transforming implementation plan:', implementationPlan);
     
-    return implementationPlan.developmentPhases.map((phase: any, phaseIndex: number) => ({
-      id: `phase-${phaseIndex + 1}`,
-      title: `${phase.phase}`,
-      description: `Duration: ${phase.duration}`,
-      stages: [{
-        id: `phase-${phaseIndex + 1}-stage-1`,
+    // Check for the new format with phases directly in content
+    if (implementationPlan?.phases && Array.isArray(implementationPlan.phases)) {
+      console.log('Using phases format');
+      return implementationPlan.phases;
+    }
+    
+    // Check for old format with developmentPhases
+    if (implementationPlan?.developmentPhases && Array.isArray(implementationPlan.developmentPhases)) {
+      console.log('Using developmentPhases format - transforming...');
+      return implementationPlan.developmentPhases.map((phase: any, phaseIndex: number) => ({
+        id: `phase-${phaseIndex + 1}`,
         title: phase.phase,
-        checkpoints: phase.tasks.map((task: any, taskIndex: number) => ({
-          id: `phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
-          title: task.task,
-          description: task.description,
-          code: task.dependencies?.length > 0 ? `Dependencies: ${task.dependencies.join(', ')}` : undefined,
-          testing: `Estimated: ${task.estimatedHours}`
-        }))
-      }]
-    }));
+        description: `Duration: ${phase.duration}`,
+        stages: [{
+          id: `phase-${phaseIndex + 1}-stage-1`,
+          title: phase.phase,
+          checkpoints: phase.tasks.map((task: any, taskIndex: number) => ({
+            id: `phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
+            title: task.task,
+            description: task.description,
+            code: task.dependencies?.length > 0 
+              ? `Dependencies: ${task.dependencies.join(', ')}` 
+              : undefined,
+            testing: `Estimated: ${task.estimatedHours}`
+          }))
+        }]
+      }));
+    }
+    
+    console.warn('No valid phases structure found in implementation plan');
+    return [];
   };
-
+ 
   const handleGenerateImplementation = async () => {
     if (!currentProject?._id) {
       toast.error('No project selected');
@@ -150,28 +182,35 @@ const Workspace = () => {
       return;
     }
     
+    const projectId = currentProject._id;
     setIsGenerating(true);
-    setShowCards(false);
     
     try {
-      await generateImplementationPlan(currentProject._id);
+      // Generate implementation plan
+      const response = await generateImplementationPlan(projectId);
+      console.log('Generate implementation response:', response);
       
-      // Fetch the updated project data
+      // Fetch updated project data
       await fetchProjects();
       
-      // Wait a bit for context to update, then find the updated project
-      setTimeout(() => {
-        const updatedProject = projects.find((p: any) => p._id === currentProject._id);
+      // Wait for context to update, then find and set the updated project
+      setTimeout(async () => {
+        // Fetch the specific project to ensure we have latest data
+        const { project: updatedProject } = await apiService.getProject(projectId);
+        console.log('Updated project after generation:', updatedProject);
+        
+        // Update current project in context
+        setCurrentProject(updatedProject);
         
         if (updatedProject?.implementationPlan?.content) {
           const phases = transformImplementationToRoadmap(updatedProject.implementationPlan.content);
+          console.log('Setting roadmap phases:', phases);
           setRoadmapPhases(phases);
+          setActiveTab('implementation');
         }
       }, 500);
       
       toast.success('Implementation plan generated successfully!');
-      setActiveTab('implementation');
-      setShowCards(true);
     } catch (error: any) {
       console.error('Implementation generation error:', error);
       toast.error(error.message || 'Failed to generate implementation plan');
@@ -179,7 +218,7 @@ const Workspace = () => {
       setIsGenerating(false);
     }
   };
-
+ 
   const handleDownload = async (type: 'prd' | 'plan' | 'complete', format?: 'markdown' | 'pdf') => {
     if (!currentProject) return;
     
@@ -206,7 +245,7 @@ const Workspace = () => {
       toast.error(error.message || 'Download failed');
     }
   };
-
+ 
   return (
     <div className="flex h-screen bg-background">
       <Sidebar 
@@ -235,7 +274,7 @@ const Workspace = () => {
                     Describe your product idea and we'll help you create a structured roadmap
                   </p>
                 </div>
-
+ 
                 <div className="relative">
                   <Textarea
                     placeholder="Describe your product idea..."
@@ -260,7 +299,7 @@ const Workspace = () => {
                 </div>
               </div>
             )}
-
+ 
             {/* Moved-up input after generation starts */}
             {hasStartedGeneration && (
               <div className="mb-8 animate-slide-up">
@@ -288,14 +327,14 @@ const Workspace = () => {
                 </div>
               </div>
             )}
-
-            {/* Loading Animation - Centered */}
+ 
+            {/* Loading Animation */}
             {isGenerating && (
               <div className="flex items-center justify-center min-h-[400px]">
                 <LoadingStages />
               </div>
             )}
-
+ 
             {/* Slider Tabs and Content */}
             {currentProject?.prd && showCards && (
               <div className="space-y-6 animate-fade-in">
@@ -326,8 +365,8 @@ const Workspace = () => {
                       Implementation Plan
                     </button>
                   </div>
-
-                  {/* Single Download Button with Dropdown */}
+ 
+                  {/* Download Button */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
@@ -367,7 +406,7 @@ const Workspace = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-
+ 
                 {/* Panel Content with Slide Animation */}
                 <div className="relative overflow-hidden">
                   {/* PRD Panel */}
@@ -381,7 +420,6 @@ const Workspace = () => {
                         title="Overview"
                         content={currentProject.prd.content?.overview || 'No overview available'}
                         onEdit={(newContent) => {
-                          // TODO: Implement PRD content editing
                           console.log('Edit overview:', newContent);
                         }}
                         style={{ animationDelay: '0.1s' }}
@@ -393,7 +431,6 @@ const Workspace = () => {
                           ? currentProject.prd.content.objectives.join('\n• ') 
                           : 'No objectives available'}
                         onEdit={(newContent) => {
-                          // TODO: Implement PRD content editing
                           console.log('Edit objectives:', newContent);
                         }}
                         style={{ animationDelay: '0.2s' }}
@@ -403,7 +440,6 @@ const Workspace = () => {
                         title="Target Audience"
                         content={`Primary: ${currentProject.prd.content?.targetAudience?.primary || 'Not specified'}\nSecondary: ${currentProject.prd.content?.targetAudience?.secondary || 'Not specified'}`}
                         onEdit={(newContent) => {
-                          // TODO: Implement PRD content editing
                           console.log('Edit target audience:', newContent);
                         }}
                         style={{ animationDelay: '0.3s' }}
@@ -415,7 +451,6 @@ const Workspace = () => {
                           ? currentProject.prd.content.features.map((f: any) => `• ${f.name}: ${f.description}`).join('\n')
                           : 'No features available'}
                         onEdit={(newContent) => {
-                          // TODO: Implement PRD content editing
                           console.log('Edit features:', newContent);
                         }}
                         style={{ animationDelay: '0.4s' }}
@@ -427,17 +462,10 @@ const Workspace = () => {
                           ? currentProject.prd.content.successMetrics.join('\n• ')
                           : 'No success metrics available'}
                         onEdit={(newContent) => {
-                          // TODO: Implement PRD content editing
                           console.log('Edit success metrics:', newContent);
                         }}
                         style={{ animationDelay: '0.5s' }}
                       />
-
-                      {/* Debug info */}
-                      <div className="text-xs text-muted-foreground mb-4 p-2 bg-muted rounded">
-                        Debug: Has PRD: {currentProject?.prd ? 'Yes' : 'No'}, 
-                        Has Implementation Plan: {currentProject?.implementationPlan ? 'Yes' : 'No'}
-                      </div>
                       
                       {currentProject?.prd && (
                         <div className="flex justify-center">
@@ -468,7 +496,7 @@ const Workspace = () => {
                       )}
                     </div>
                   </div>
-
+ 
                   {/* Implementation Plan Panel */}
                   {currentProject?.implementationPlan && (
                     <div className={`transition-transform duration-300 ease-in-out ${
@@ -482,7 +510,7 @@ const Workspace = () => {
                         ) : (
                           <div className="text-center text-muted-foreground py-12 bg-muted/30 rounded-lg">
                             <p className="text-lg">No roadmap available yet</p>
-                            <p className="text-sm mt-2">Generate an implementation plan to see the roadmap</p>
+                            <p className="text-sm mt-2">The implementation plan structure could not be parsed</p>
                           </div>
                         )}
                       </div>
@@ -497,5 +525,5 @@ const Workspace = () => {
     </div>
   );
 };
-
+ 
 export default Workspace;
