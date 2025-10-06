@@ -23,7 +23,8 @@ const Workspace = () => {
     projects, 
     currentProject, 
     isLoading, 
-    fetchProjects, 
+    fetchProjects,
+    fetchProject, 
     createProject, 
     generatePRD, 
     generateImplementationPlan,
@@ -45,16 +46,17 @@ const Workspace = () => {
  
   useEffect(() => {
     if (currentProject) {
-      console.log('Current project:', currentProject);
-      console.log('Has PRD:', !!currentProject.prd);
-      console.log('Has Implementation Plan:', !!currentProject.implementationPlan);
+      // If project has PRD, show it
+      if (currentProject.prd?.content) {
+        setShowCards(true);
+        setHasStartedGeneration(true);
+      }
       
-      // Load roadmap when project changes
+      // If project has implementation plan, load the roadmap
       if (currentProject.implementationPlan?.content) {
-        console.log('Implementation Plan Content:', currentProject.implementationPlan.content);
         const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content);
-        console.log('Transformed Phases:', phases);
         setRoadmapPhases(phases);
+        setActiveTab('implementation');
       }
     }
   }, [currentProject]);
@@ -68,22 +70,38 @@ const Workspace = () => {
     setRoadmapPhases([]);
   };
  
-  const handleSelectProject = (projectId: string) => {
-    const project = projects.find(p => p._id === projectId);
-    if (project) {
+  const handleSelectProject = async (projectId: string) => {
+    try {
       setSelectedProjectId(projectId);
-      setCurrentProject(project);
-      setCurrentIdea(project.idea);
-      setShowCards(!!project.prd);
-      setHasStartedGeneration(!!project.prd);
+      // Fetch fresh project data to ensure we have the latest PRD and implementation plan
+      await fetchProject(projectId);
+      const project = projects.find(p => p._id === projectId);
       
-      // Load roadmap phases if implementation plan exists
-      if (project.implementationPlan?.content) {
-        const phases = transformImplementationToRoadmap(project.implementationPlan.content);
-        setRoadmapPhases(phases);
-      } else {
-        setRoadmapPhases([]);
+      if (project) {
+        setCurrentIdea(project.idea);
+        
+        // If project has PRD, show it immediately
+        if (project.prd?.content) {
+          setShowCards(true);
+          setHasStartedGeneration(true);
+        } else {
+          setShowCards(false);
+          setHasStartedGeneration(false);
+        }
+        
+        // Load roadmap phases if implementation plan exists
+        if (project.implementationPlan?.content) {
+          const phases = transformImplementationToRoadmap(project.implementationPlan.content);
+          setRoadmapPhases(phases);
+          setActiveTab('implementation');
+        } else {
+          setRoadmapPhases([]);
+          setActiveTab('prd');
+        }
       }
+    } catch (error) {
+      toast.error('Failed to load project details');
+      console.error('Error loading project:', error);
     }
   };
  
