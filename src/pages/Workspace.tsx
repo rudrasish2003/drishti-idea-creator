@@ -17,12 +17,11 @@ import { useProjects } from '@/contexts/ProjectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/api';
 import { toast } from 'sonner';
- 
+
 const Workspace = () => {
   const { 
     projects, 
     currentProject, 
-    isLoading, 
     fetchProjects,
     fetchProject, 
     createProject, 
@@ -31,7 +30,7 @@ const Workspace = () => {
     setCurrentProject 
   } = useProjects();
   const { user } = useAuth();
-  
+
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [currentIdea, setCurrentIdea] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -39,20 +38,17 @@ const Workspace = () => {
   const [showCards, setShowCards] = useState(false);
   const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
   const [roadmapPhases, setRoadmapPhases] = useState<any[]>([]);
- 
+
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
- 
+
   useEffect(() => {
     if (currentProject) {
-      // If project has PRD, show it
       if (currentProject.prd?.content) {
         setShowCards(true);
         setHasStartedGeneration(true);
       }
-      
-      // If project has implementation plan, load the roadmap
       if (currentProject.implementationPlan?.content) {
         const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content);
         setRoadmapPhases(phases);
@@ -60,7 +56,7 @@ const Workspace = () => {
       }
     }
   }, [currentProject]);
- 
+
   const handleNewProject = () => {
     setSelectedProjectId('');
     setCurrentProject(null);
@@ -69,18 +65,15 @@ const Workspace = () => {
     setHasStartedGeneration(false);
     setRoadmapPhases([]);
   };
- 
+
   const handleSelectProject = async (projectId: string) => {
     try {
       setSelectedProjectId(projectId);
-      // Fetch fresh project data to ensure we have the latest PRD and implementation plan
       await fetchProject(projectId);
       const project = projects.find(p => p._id === projectId);
-      
+
       if (project) {
         setCurrentIdea(project.idea);
-        
-        // If project has PRD, show it immediately
         if (project.prd?.content) {
           setShowCards(true);
           setHasStartedGeneration(true);
@@ -88,8 +81,6 @@ const Workspace = () => {
           setShowCards(false);
           setHasStartedGeneration(false);
         }
-        
-        // Load roadmap phases if implementation plan exists
         if (project.implementationPlan?.content) {
           const phases = transformImplementationToRoadmap(project.implementationPlan.content);
           setRoadmapPhases(phases);
@@ -104,16 +95,16 @@ const Workspace = () => {
       console.error('Error loading project:', error);
     }
   };
- 
+
   const handleGeneratePRD = async () => {
     if (!currentIdea.trim()) return;
-    
+
     setIsGenerating(true);
     setHasStartedGeneration(true);
     setShowCards(false);
-    
+
     let projectId = currentProject?._id;
-    
+
     try {
       if (currentProject) {
         await generatePRD(currentProject._id);
@@ -126,18 +117,15 @@ const Workspace = () => {
         );
         projectId = newProject._id;
         setSelectedProjectId(newProject._id);
-        
         await generatePRD(newProject._id);
         toast.success('Project created and PRD generated successfully!');
       }
-      
-      // Fetch the updated project to ensure we have the latest PRD
+
       if (projectId) {
         const { project: updatedProject } = await apiService.getProject(projectId);
         setCurrentProject(updatedProject);
       }
-      
-      // Stay on PRD tab
+
       setActiveTab('prd');
       setShowCards(true);
     } catch (error: any) {
@@ -148,23 +136,12 @@ const Workspace = () => {
       setIsGenerating(false);
     }
   };
- 
-  /**
-   * Transform implementation plan JSON to roadmap format
-   * Handles both old format (developmentPhases) and new format (phases)
-   */
+
   const transformImplementationToRoadmap = (implementationPlan: any) => {
-    console.log('Transforming implementation plan:', implementationPlan);
-    
-    // Check for the new format with phases directly in content
     if (implementationPlan?.phases && Array.isArray(implementationPlan.phases)) {
-      console.log('Using phases format');
       return implementationPlan.phases;
     }
-    
-    // Check for old format with developmentPhases
     if (implementationPlan?.developmentPhases && Array.isArray(implementationPlan.developmentPhases)) {
-      console.log('Using developmentPhases format - transforming...');
       return implementationPlan.developmentPhases.map((phase: any, phaseIndex: number) => ({
         id: `phase-${phaseIndex + 1}`,
         title: phase.phase,
@@ -184,115 +161,90 @@ const Workspace = () => {
         }]
       }));
     }
-    
-    console.warn('No valid phases structure found in implementation plan');
     return [];
   };
- 
+
   const handleGenerateImplementation = async () => {
     if (!currentProject?._id) {
       toast.error('No project selected');
       return;
     }
-    
     if (!currentProject?.prd) {
       toast.error('Please generate PRD first');
       return;
     }
-    
+
     const projectId = currentProject._id;
     setIsGenerating(true);
-    
+
     try {
-      // Generate implementation plan
-      const response = await generateImplementationPlan(projectId);
-      console.log('Generate implementation response:', response);
-      
-      // Fetch updated project data
+      await generateImplementationPlan(projectId);
       await fetchProjects();
-      
-      // Wait for context to update, then find and set the updated project
       setTimeout(async () => {
-        // Fetch the specific project to ensure we have latest data
         const { project: updatedProject } = await apiService.getProject(projectId);
-        console.log('Updated project after generation:', updatedProject);
-        
-        // Update current project in context
         setCurrentProject(updatedProject);
-        
         if (updatedProject?.implementationPlan?.content) {
           const phases = transformImplementationToRoadmap(updatedProject.implementationPlan.content);
-          console.log('Setting roadmap phases:', phases);
           setRoadmapPhases(phases);
           setActiveTab('implementation');
         }
       }, 500);
-      
       toast.success('Implementation plan generated successfully!');
     } catch (error: any) {
-      console.error('Implementation generation error:', error);
       toast.error(error.message || 'Failed to generate implementation plan');
     } finally {
       setIsGenerating(false);
     }
   };
- 
+
   const handleDownload = async (type: 'prd' | 'plan' | 'complete', format?: 'markdown' | 'pdf') => {
     if (!currentProject) return;
-    
     try {
       if (type === 'complete') {
         await apiService.downloadCompleteProject(currentProject._id);
         toast.success('Complete project downloaded!');
       } else if (type === 'prd') {
-        if (format === 'markdown') {
-          await apiService.downloadPRDMarkdown(currentProject._id);
-        } else {
-          await apiService.downloadPRDPDF(currentProject._id);
-        }
+        if (format === 'markdown') await apiService.downloadPRDMarkdown(currentProject._id);
+        else await apiService.downloadPRDPDF(currentProject._id);
         toast.success(`PRD ${format} downloaded!`);
       } else if (type === 'plan') {
-        if (format === 'markdown') {
-          await apiService.downloadPlanMarkdown(currentProject._id);
-        } else {
-          await apiService.downloadPlanPDF(currentProject._id);
-        }
+        if (format === 'markdown') await apiService.downloadPlanMarkdown(currentProject._id);
+        else await apiService.downloadPlanPDF(currentProject._id);
         toast.success(`Implementation plan ${format} downloaded!`);
       }
     } catch (error: any) {
       toast.error(error.message || 'Download failed');
     }
   };
- 
+
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background relative">
       <Sidebar 
         projects={projects}
         onSelectProject={handleSelectProject}
         onNewProject={handleNewProject}
         selectedProjectId={selectedProjectId}
       />
-      
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full bg-background relative overflow-auto" 
-             style={{
-               backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px)',
-               backgroundSize: '20px 20px'
-             }}>
-          
+
+      <main className="flex-1 overflow-hidden relative">
+        <div 
+          className="h-full bg-background relative overflow-auto" 
+          style={{
+            backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px)',
+            backgroundSize: '20px 20px'
+          }}
+        >
           <div className={`transition-all duration-500 ${hasStartedGeneration ? 'max-w-4xl mx-auto p-8' : 'flex items-center justify-center min-h-screen px-8'}`}>
-            {/* ChatGPT-style centered input */}
+            
+            {/* Input Field */}
             {!hasStartedGeneration && (
               <div className="w-full max-w-3xl space-y-8 animate-fade-in">
                 <div className="text-center space-y-4">
-                  <h1 className="text-4xl font-bold text-foreground">
-                    What's your next big idea?
-                  </h1>
+                  <h1 className="text-4xl font-bold text-foreground">What's your next big idea?</h1>
                   <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                     Describe your product idea and we'll help you create a structured roadmap
                   </p>
                 </div>
- 
                 <div className="relative">
                   <Textarea
                     placeholder="Describe your product idea..."
@@ -317,8 +269,7 @@ const Workspace = () => {
                 </div>
               </div>
             )}
- 
-            {/* Moved-up input after generation starts */}
+
             {hasStartedGeneration && (
               <div className="mb-8 animate-slide-up">
                 <div className="relative bg-card border border-border rounded-2xl shadow-md">
@@ -345,18 +296,18 @@ const Workspace = () => {
                 </div>
               </div>
             )}
- 
-            {/* Loading Animation */}
+
+            {/* ✅ Centered Loading Animation (fixed-position, glitch-free) */}
             {isGenerating && (
-              <div className="flex items-center justify-center min-h-[400px]">
+              <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
                 <LoadingStages />
               </div>
             )}
- 
-            {/* Slider Tabs and Content */}
-            {currentProject?.prd && showCards && (
+
+            {/* Content after generation */}
+            {!isGenerating && currentProject?.prd && showCards && (
               <div className="space-y-6 animate-fade-in">
-                {/* Tab Navigation */}
+                {/* Tabs */}
                 <div className="flex items-center justify-between">
                   <div className="flex bg-muted rounded-lg p-1">
                     <button
@@ -383,15 +334,11 @@ const Workspace = () => {
                       Implementation Plan
                     </button>
                   </div>
- 
-                  {/* Download Button */}
+
+                  {/* Download */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-2"
-                      >
+                      <Button variant="outline" size="sm" className="flex items-center gap-2">
                         <Download className="h-4 w-4" />
                         Download
                         <ChevronDown className="h-4 w-4" />
@@ -424,114 +371,57 @@ const Workspace = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
- 
-                {/* Panel Content with Slide Animation */}
+
+                {/* Panels */}
                 <div className="relative overflow-hidden">
-                  {/* PRD Panel */}
-                  <div className={`transition-transform duration-300 ease-in-out ${
-                    activeTab === 'prd' ? 'translate-x-0' : '-translate-x-full absolute top-0 left-0 w-full'
-                  }`}>
+                  {activeTab === 'prd' && (
                     <div className="space-y-6">
                       <h2 className="text-2xl font-bold text-foreground">Product Requirements Document</h2>
-                      
-                      <Flashcard
-                        title="Overview"
-                        content={currentProject.prd.content?.overview || 'No overview available'}
-                        onEdit={(newContent) => {
-                          console.log('Edit overview:', newContent);
-                        }}
-                        style={{ animationDelay: '0.1s' }}
-                      />
-                      
-                      <Flashcard
-                        title="Objectives"
-                        content={Array.isArray(currentProject.prd.content?.objectives) 
-                          ? currentProject.prd.content.objectives.join('\n• ') 
-                          : 'No objectives available'}
-                        onEdit={(newContent) => {
-                          console.log('Edit objectives:', newContent);
-                        }}
-                        style={{ animationDelay: '0.2s' }}
-                      />
-                      
-                      <Flashcard
-                        title="Target Audience"
-                        content={`Primary: ${currentProject.prd.content?.targetAudience?.primary || 'Not specified'}\nSecondary: ${currentProject.prd.content?.targetAudience?.secondary || 'Not specified'}`}
-                        onEdit={(newContent) => {
-                          console.log('Edit target audience:', newContent);
-                        }}
-                        style={{ animationDelay: '0.3s' }}
-                      />
-                      
-                      <Flashcard
-                        title="Core Features"
-                        content={Array.isArray(currentProject.prd.content?.features) 
-                          ? currentProject.prd.content.features.map((f: any) => `• ${f.name}: ${f.description}`).join('\n')
-                          : 'No features available'}
-                        onEdit={(newContent) => {
-                          console.log('Edit features:', newContent);
-                        }}
-                        style={{ animationDelay: '0.4s' }}
-                      />
-                      
-                      <Flashcard
-                        title="Success Metrics"
-                        content={Array.isArray(currentProject.prd.content?.successMetrics) 
-                          ? currentProject.prd.content.successMetrics.join('\n• ')
-                          : 'No success metrics available'}
-                        onEdit={(newContent) => {
-                          console.log('Edit success metrics:', newContent);
-                        }}
-                        style={{ animationDelay: '0.5s' }}
-                      />
-                      
-                      {currentProject?.prd && (
-                        <div className="flex justify-center">
-                          <Button 
-                            onClick={handleGenerateImplementation}
-                            variant="gradient"
-                            disabled={isGenerating}
-                            className="flex items-center gap-2"
-                          >
-                            {isGenerating ? (
-                              <>
-                                <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                                Generating Implementation Plan...
-                              </>
-                            ) : currentProject?.implementationPlan ? (
-                              <>
-                                View Implementation Plan
-                                <ArrowRight className="h-4 w-4" />
-                              </>
-                            ) : (
-                              <>
-                                Generate MVP Implementation Plan
-                                <ArrowRight className="h-4 w-4" />
-                              </>
-                            )}
-                          </Button>
+                      <Flashcard title="Overview" content={currentProject.prd.content?.overview || 'No overview available'} />
+                      <Flashcard title="Objectives" content={Array.isArray(currentProject.prd.content?.objectives) ? currentProject.prd.content.objectives.join('\n• ') : 'No objectives available'} />
+                      <Flashcard title="Target Audience" content={`Primary: ${currentProject.prd.content?.targetAudience?.primary || 'Not specified'}\nSecondary: ${currentProject.prd.content?.targetAudience?.secondary || 'Not specified'}`} />
+                      <Flashcard title="Core Features" content={Array.isArray(currentProject.prd.content?.features) ? currentProject.prd.content.features.map((f: any) => `• ${f.name}: ${f.description}`).join('\n') : 'No features available'} />
+                      <Flashcard title="Success Metrics" content={Array.isArray(currentProject.prd.content?.successMetrics) ? currentProject.prd.content.successMetrics.join('\n• ') : 'No success metrics available'} />
+
+                      <div className="flex justify-center">
+                        <Button 
+                          onClick={handleGenerateImplementation}
+                          variant="gradient"
+                          disabled={isGenerating}
+                          className="flex items-center gap-2"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                              Generating Implementation Plan...
+                            </>
+                          ) : currentProject?.implementationPlan ? (
+                            <>
+                              View Implementation Plan
+                              <ArrowRight className="h-4 w-4" />
+                            </>
+                          ) : (
+                            <>
+                              Generate MVP Implementation Plan
+                              <ArrowRight className="h-4 w-4" />
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'implementation' && currentProject?.implementationPlan && (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-bold text-foreground">Implementation Roadmap</h2>
+                      {roadmapPhases.length > 0 ? (
+                        <ImplementationRoadmap phases={roadmapPhases} />
+                      ) : (
+                        <div className="text-center text-muted-foreground py-12 bg-muted/30 rounded-lg">
+                          <p className="text-lg">No roadmap available yet</p>
+                          <p className="text-sm mt-2">The implementation plan structure could not be parsed</p>
                         </div>
                       )}
-                    </div>
-                  </div>
- 
-                  {/* Implementation Plan Panel */}
-                  {currentProject?.implementationPlan && (
-                    <div className={`transition-transform duration-300 ease-in-out ${
-                      activeTab === 'implementation' ? 'translate-x-0' : 'translate-x-full absolute top-0 left-0 w-full'
-                    }`}>
-                      <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-foreground">Implementation Roadmap</h2>
-                        
-                        {roadmapPhases.length > 0 ? (
-                          <ImplementationRoadmap phases={roadmapPhases} />
-                        ) : (
-                          <div className="text-center text-muted-foreground py-12 bg-muted/30 rounded-lg">
-                            <p className="text-lg">No roadmap available yet</p>
-                            <p className="text-sm mt-2">The implementation plan structure could not be parsed</p>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   )}
                 </div>
@@ -543,5 +433,5 @@ const Workspace = () => {
     </div>
   );
 };
- 
+
 export default Workspace;
