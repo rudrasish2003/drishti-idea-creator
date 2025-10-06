@@ -47,7 +47,23 @@ export const ProjectsProvider: React.FC<ProjectsProviderProps> = ({ children }) 
       setError(null);
       setIsLoading(true);
       const response = await apiService.getProject(id);
-      setCurrentProject(response.project);
+      // Make sure to properly cast any stored JSON data back to proper format
+      const project = {
+        ...response.project,
+        prd: response.project.prd ? {
+          ...response.project.prd,
+          content: typeof response.project.prd.content === 'string' 
+            ? JSON.parse(response.project.prd.content)
+            : response.project.prd.content
+        } : null,
+        implementationPlan: response.project.implementationPlan ? {
+          ...response.project.implementationPlan,
+          content: typeof response.project.implementationPlan.content === 'string'
+            ? JSON.parse(response.project.implementationPlan.content)
+            : response.project.implementationPlan.content
+        } : null
+      };
+      setCurrentProject(project);
     } catch (error: any) {
       setError(error.message || 'Failed to fetch project');
       throw error;

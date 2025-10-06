@@ -17,13 +17,14 @@ import { useProjects } from '@/contexts/ProjectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/api';
 import { toast } from 'sonner';
-
+ 
 const Workspace = () => {
   const { 
     projects, 
     currentProject, 
     isLoading, 
-    fetchProjects, 
+    fetchProjects,
+    fetchProject, 
     createProject, 
     generatePRD, 
     generateImplementationPlan,
@@ -38,27 +39,29 @@ const Workspace = () => {
   const [showCards, setShowCards] = useState(false);
   const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
   const [roadmapPhases, setRoadmapPhases] = useState<any[]>([]);
-
+ 
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
+  // Debug logging
   useEffect(() => {
     if (currentProject) {
-      console.log('Current project:', currentProject);
-      console.log('Has PRD:', !!currentProject.prd);
-      console.log('Has Implementation Plan:', !!currentProject.implementationPlan);
+      // If project has PRD, show it
+      if (currentProject.prd?.content) {
+        setShowCards(true);
+        setHasStartedGeneration(true);
+      }
       
-      // Load roadmap when project changes
+      // If project has implementation plan, load the roadmap
       if (currentProject.implementationPlan?.content) {
-        console.log('Implementation Plan Content:', currentProject.implementationPlan.content);
         const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content);
-        console.log('Transformed Phases:', phases);
         setRoadmapPhases(phases);
+        setActiveTab('implementation');
       }
     }
   }, [currentProject]);
-
+ 
   const handleNewProject = () => {
     setSelectedProjectId('');
     setCurrentProject(null);
@@ -67,26 +70,42 @@ const Workspace = () => {
     setHasStartedGeneration(false);
     setRoadmapPhases([]);
   };
-
-  const handleSelectProject = (projectId: string) => {
-    const project = projects.find(p => p._id === projectId);
-    if (project) {
+ 
+  const handleSelectProject = async (projectId: string) => {
+    try {
       setSelectedProjectId(projectId);
-      setCurrentProject(project);
-      setCurrentIdea(project.idea);
-      setShowCards(!!project.prd);
-      setHasStartedGeneration(!!project.prd);
+      // Fetch fresh project data to ensure we have the latest PRD and implementation plan
+      await fetchProject(projectId);
+      const project = projects.find(p => p._id === projectId);
       
-      // Load roadmap phases if implementation plan exists
-      if (project.implementationPlan?.content) {
-        const phases = transformImplementationToRoadmap(project.implementationPlan.content);
-        setRoadmapPhases(phases);
-      } else {
-        setRoadmapPhases([]);
+      if (project) {
+        setCurrentIdea(project.idea);
+        
+        // If project has PRD, show it immediately
+        if (project.prd?.content) {
+          setShowCards(true);
+          setHasStartedGeneration(true);
+        } else {
+          setShowCards(false);
+          setHasStartedGeneration(false);
+        }
+        
+        // Load roadmap phases if implementation plan exists
+        if (project.implementationPlan?.content) {
+          const phases = transformImplementationToRoadmap(project.implementationPlan.content);
+          setRoadmapPhases(phases);
+          setActiveTab('implementation');
+        } else {
+          setRoadmapPhases([]);
+          setActiveTab('prd');
+        }
       }
+    } catch (error) {
+      toast.error('Failed to load project details');
+      console.error('Error loading project:', error);
     }
   };
-
+ 
   const handleGeneratePRD = async () => {
     if (!currentIdea.trim()) return;
     
@@ -131,10 +150,6 @@ const Workspace = () => {
     }
   };
 
-  /**
-   * Transform implementation plan JSON to roadmap format
-   * Handles both old format (developmentPhases) and new format (phases)
-   */
   const transformImplementationToRoadmap = (implementationPlan: any) => {
     console.log('Transforming implementation plan:', implementationPlan);
     
@@ -170,7 +185,7 @@ const Workspace = () => {
     console.warn('No valid phases structure found in implementation plan');
     return [];
   };
-
+ 
   const handleGenerateImplementation = async () => {
     if (!currentProject?._id) {
       toast.error('No project selected');
@@ -218,7 +233,7 @@ const Workspace = () => {
       setIsGenerating(false);
     }
   };
-
+ 
   const handleDownload = async (type: 'prd' | 'plan' | 'complete', format?: 'markdown' | 'pdf') => {
     if (!currentProject) return;
     
@@ -245,7 +260,7 @@ const Workspace = () => {
       toast.error(error.message || 'Download failed');
     }
   };
-
+ 
   return (
     <div className="flex h-screen bg-background">
       <Sidebar 
@@ -274,7 +289,7 @@ const Workspace = () => {
                     Describe your product idea and we'll help you create a structured roadmap
                   </p>
                 </div>
-
+ 
                 <div className="relative">
                   <Textarea
                     placeholder="Describe your product idea..."
@@ -299,7 +314,7 @@ const Workspace = () => {
                 </div>
               </div>
             )}
-
+ 
             {/* Moved-up input after generation starts */}
             {hasStartedGeneration && (
               <div className="mb-8 animate-slide-up">
@@ -328,13 +343,13 @@ const Workspace = () => {
               </div>
             )}
 
-            {/* Loading Animation */}
+            {/* Loading Animation - Centered */}
             {isGenerating && (
               <div className="flex items-center justify-center min-h-[400px]">
                 <LoadingStages />
               </div>
             )}
-
+ 
             {/* Slider Tabs and Content */}
             {currentProject?.prd && showCards && (
               <div className="space-y-6 animate-fade-in">
@@ -366,7 +381,7 @@ const Workspace = () => {
                     </button>
                   </div>
 
-                  {/* Download Button */}
+                  {/* Single Download Button with Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
@@ -406,7 +421,7 @@ const Workspace = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-
+ 
                 {/* Panel Content with Slide Animation */}
                 <div className="relative overflow-hidden">
                   {/* PRD Panel */}
@@ -496,7 +511,7 @@ const Workspace = () => {
                       )}
                     </div>
                   </div>
-
+ 
                   {/* Implementation Plan Panel */}
                   {currentProject?.implementationPlan && (
                     <div className={`transition-transform duration-300 ease-in-out ${
@@ -525,5 +540,5 @@ const Workspace = () => {
     </div>
   );
 };
-
+ 
 export default Workspace;
