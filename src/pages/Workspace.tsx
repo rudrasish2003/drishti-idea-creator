@@ -43,6 +43,10 @@ const Workspace = () => {
     fetchProjects();
   }, [fetchProjects]);
 
+<<<<<<< HEAD
+=======
+  // Debug logging
+>>>>>>> fe0dad334e407386d8fb0360a6602e77324cbd6d
   useEffect(() => {
     if (currentProject) {
       if (currentProject.prd?.content) {
@@ -297,7 +301,11 @@ const Workspace = () => {
               </div>
             )}
 
+<<<<<<< HEAD
             {/* ✅ Centered Loading Animation (fixed-position, glitch-free) */}
+=======
+            {/* Loading Animation - Centered */}
+>>>>>>> fe0dad334e407386d8fb0360a6602e77324cbd6d
             {isGenerating && (
               <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
                 <LoadingStages />
@@ -335,7 +343,11 @@ const Workspace = () => {
                     </button>
                   </div>
 
+<<<<<<< HEAD
                   {/* Download */}
+=======
+                  {/* Single Download Button with Dropdown */}
+>>>>>>> fe0dad334e407386d8fb0360a6602e77324cbd6d
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm" className="flex items-center gap-2">
