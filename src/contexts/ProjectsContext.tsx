@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { Project, apiService } from '../services/api';
 
 interface ProjectsContextType {
@@ -6,6 +6,7 @@ interface ProjectsContextType {
   currentProject: Project | null;
   isLoading: boolean;
   error: string | null;
+  projectGenerationState: Record<string, boolean>;
   fetchProjects: () => Promise<void>;
   fetchProject: (id: string) => Promise<void>;
   createProject: (title: string, idea: string) => Promise<Project>;
@@ -27,6 +28,11 @@ export const ProjectsProvider: React.FC<ProjectsProviderProps> = ({ children }) 
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [projectGenerationState, setProjectGenerationState] = useState<Record<string, boolean>>({});
+
+  const setProjectGenerating = (projectId: string, generating: boolean) => {
+    setProjectGenerationState((prev) => ({ ...prev, [projectId]: generating }));
+  };
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -36,7 +42,6 @@ export const ProjectsProvider: React.FC<ProjectsProviderProps> = ({ children }) 
       setProjects(response.projects);
     } catch (error: any) {
       setError(error.message || 'Failed to fetch projects');
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -47,26 +52,30 @@ export const ProjectsProvider: React.FC<ProjectsProviderProps> = ({ children }) 
       setError(null);
       setIsLoading(true);
       const response = await apiService.getProject(id);
-      // Make sure to properly cast any stored JSON data back to proper format
       const project = {
         ...response.project,
-        prd: response.project.prd ? {
-          ...response.project.prd,
-          content: typeof response.project.prd.content === 'string' 
-            ? JSON.parse(response.project.prd.content)
-            : response.project.prd.content
-        } : null,
-        implementationPlan: response.project.implementationPlan ? {
-          ...response.project.implementationPlan,
-          content: typeof response.project.implementationPlan.content === 'string'
-            ? JSON.parse(response.project.implementationPlan.content)
-            : response.project.implementationPlan.content
-        } : null
+        prd: response.project.prd
+          ? {
+              ...response.project.prd,
+              content:
+                typeof response.project.prd.content === 'string'
+                  ? JSON.parse(response.project.prd.content)
+                  : response.project.prd.content,
+            }
+          : null,
+        implementationPlan: response.project.implementationPlan
+          ? {
+              ...response.project.implementationPlan,
+              content:
+                typeof response.project.implementationPlan.content === 'string'
+                  ? JSON.parse(response.project.implementationPlan.content)
+                  : response.project.implementationPlan.content,
+            }
+          : null,
       };
       setCurrentProject(project);
     } catch (error: any) {
       setError(error.message || 'Failed to fetch project');
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +87,7 @@ export const ProjectsProvider: React.FC<ProjectsProviderProps> = ({ children }) 
       setIsLoading(true);
       const response = await apiService.createProject({ title, idea });
       const newProject = response.project;
-      setProjects(prev => [newProject, ...prev]);
+      setProjects((prev) => [newProject, ...prev]);
       setCurrentProject(newProject);
       return newProject;
     } catch (error: any) {
@@ -89,92 +98,83 @@ export const ProjectsProvider: React.FC<ProjectsProviderProps> = ({ children }) 
     }
   }, []);
 
-  const updateProject = useCallback(async (id: string, title: string, idea: string) => {
-    try {
-      setError(null);
-      setIsLoading(true);
-      const response = await apiService.updateProject(id, { title, idea });
-      const updatedProject = response.project;
-      
-      setProjects(prev => prev.map(p => p._id === id ? updatedProject : p));
-      if (currentProject?._id === id) {
-        setCurrentProject(updatedProject);
+  const updateProject = useCallback(
+    async (id: string, title: string, idea: string) => {
+      try {
+        setError(null);
+        setIsLoading(true);
+        const response = await apiService.updateProject(id, { title, idea });
+        const updatedProject = response.project;
+        setProjects((prev) => prev.map((p) => (p._id === id ? updatedProject : p)));
+        if (currentProject?._id === id) {
+          setCurrentProject(updatedProject);
+        }
+      } catch (error: any) {
+        setError(error.message || 'Failed to update project');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error: any) {
-      setError(error.message || 'Failed to update project');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentProject]);
+    },
+    [currentProject]
+  );
 
-  const deleteProject = useCallback(async (id: string) => {
-    try {
-      setError(null);
-      setIsLoading(true);
-      await apiService.deleteProject(id);
-      
-      setProjects(prev => prev.filter(p => p._id !== id));
-      if (currentProject?._id === id) {
-        setCurrentProject(null);
+  const deleteProject = useCallback(
+    async (id: string) => {
+      try {
+        setError(null);
+        setIsLoading(true);
+        await apiService.deleteProject(id);
+        setProjects((prev) => prev.filter((p) => p._id !== id));
+        if (currentProject?._id === id) setCurrentProject(null);
+      } catch (error: any) {
+        setError(error.message || 'Failed to delete project');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error: any) {
-      setError(error.message || 'Failed to delete project');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentProject]);
+    },
+    [currentProject]
+  );
 
-  const generatePRD = useCallback(async (projectId: string) => {
-    try {
-      setError(null);
-      setIsLoading(true);
-      const response = await apiService.generatePRD(projectId);
-      
-      // Update the project with the new PRD
-      const updatedProject = await apiService.getProject(projectId);
-      const project = updatedProject.project;
-      
-      setProjects(prev => prev.map(p => p._id === projectId ? project : p));
-      if (currentProject?._id === projectId) {
-        setCurrentProject(project);
+  const generatePRD = useCallback(
+    async (projectId: string) => {
+      setProjectGenerating(projectId, true);
+      try {
+        await apiService.generatePRD(projectId);
+        const { project } = await apiService.getProject(projectId);
+        setProjects((prev) => prev.map((p) => (p._id === projectId ? project : p)));
+        if (currentProject?._id === projectId) setCurrentProject(project);
+      } catch (error: any) {
+        setError(error.message || 'Failed to generate PRD');
+      } finally {
+        setProjectGenerating(projectId, false);
       }
-    } catch (error: any) {
-      setError(error.message || 'Failed to generate PRD');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentProject]);
+    },
+    [currentProject]
+  );
 
-  const generateImplementationPlan = useCallback(async (projectId: string) => {
-    try {
-      setError(null);
-      setIsLoading(true);
-      const response = await apiService.generateImplementationPlan(projectId);
-      
-      // Update the project with the new implementation plan
-      const updatedProject = await apiService.getProject(projectId);
-      const project = updatedProject.project;
-      
-      setProjects(prev => prev.map(p => p._id === projectId ? project : p));
-      if (currentProject?._id === projectId) {
-        setCurrentProject(project);
+  const generateImplementationPlan = useCallback(
+    async (projectId: string) => {
+      setProjectGenerating(projectId, true);
+      try {
+        await apiService.generateImplementationPlan(projectId);
+        const { project } = await apiService.getProject(projectId);
+        setProjects((prev) => prev.map((p) => (p._id === projectId ? project : p)));
+        if (currentProject?._id === projectId) setCurrentProject(project);
+      } catch (error: any) {
+        setError(error.message || 'Failed to generate implementation plan');
+      } finally {
+        setProjectGenerating(projectId, false);
       }
-    } catch (error: any) {
-      setError(error.message || 'Failed to generate implementation plan');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentProject]);
+    },
+    [currentProject]
+  );
 
   const value: ProjectsContextType = {
     projects,
     currentProject,
     isLoading,
     error,
+    projectGenerationState,
     fetchProjects,
     fetchProject,
     createProject,
@@ -185,18 +185,12 @@ export const ProjectsProvider: React.FC<ProjectsProviderProps> = ({ children }) 
     setCurrentProject,
   };
 
-  return (
-    <ProjectsContext.Provider value={value}>
-      {children}
-    </ProjectsContext.Provider>
-  );
+  return <ProjectsContext.Provider value={value}>{children}</ProjectsContext.Provider>;
 };
 
 export const useProjects = (): ProjectsContextType => {
   const context = useContext(ProjectsContext);
-  if (context === undefined) {
-    throw new Error('useProjects must be used within a ProjectsProvider');
-  }
+  if (!context) throw new Error('useProjects must be used within a ProjectsProvider');
   return context;
 };
 
