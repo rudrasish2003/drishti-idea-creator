@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { X } from 'lucide-react';
 
 const SignUp = () => {
   const [username, setUsername] = useState('');
@@ -51,7 +52,16 @@ const SignUp = () => {
       
       <div className="flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
-          <div className="flashcard">
+          <div className="flashcard relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 h-8 w-8"
+              onClick={() => navigate('/')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-foreground mb-2">Create your account</h1>
               <p className="text-muted-foreground">Start turning your ideas into products</p>
