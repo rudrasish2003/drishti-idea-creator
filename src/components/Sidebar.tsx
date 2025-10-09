@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface Project {
   _id: string;
@@ -29,6 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { deleteProject } = useProjects();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent project selection when clicking delete
@@ -150,6 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => {
               logout();
               setIsMobileOpen(false);
+              navigate('/');
             }}
             className="hover:bg-destructive/10 hover:text-destructive"
             title="Logout"

@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Lightbulb, FileText, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
-import { AuthModal } from '@/components/AuthModal';
 import { useAuth } from '@/contexts/AuthContext';
 import AnimatedDemo from '@/components/AnimatedDemo';
 import heroImage from '@/assets/hero-illustration.jpg';
 
 const Index = () => {
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -21,17 +18,9 @@ const Index = () => {
     }
   }, [user, navigate]);
 
-  const openAuthModal = (mode: 'signin' | 'signup') => {
-    setAuthMode(mode);
-    setAuthModalOpen(true);
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      <Header 
-        onOpenSignIn={() => openAuthModal('signin')}
-        onOpenSignUp={() => openAuthModal('signup')}
-      />
+      <Header />
       
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
@@ -54,14 +43,15 @@ const Index = () => {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  variant="hero" 
-                  className="w-full sm:w-auto"
-                  onClick={() => openAuthModal('signup')}
-                >
-                  Get Started
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                <Link to="/signup">
+                  <Button 
+                    variant="hero" 
+                    className="w-full sm:w-auto"
+                  >
+                    Get Started
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
                 <Button 
                   variant="outline" 
                   className="w-full sm:w-auto"
@@ -114,22 +104,16 @@ const Index = () => {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join hundreds of founders and product managers who use drishti.io to turn ideas into reality.
           </p>
-          <Button 
-            variant="hero"
-            onClick={() => openAuthModal('signup')}
-          >
-            Start Building Today
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <Link to="/signup">
+            <Button 
+              variant="hero"
+            >
+              Start Building Today
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </section>
-
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        initialMode={authMode}
-      />
     </div>
   );
 };

@@ -1,18 +1,19 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User } from 'lucide-react';
 
-interface HeaderProps {
-  onOpenSignIn?: () => void;
-  onOpenSignUp?: () => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({ onOpenSignIn, onOpenSignUp }) => {
+export const Header: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isWorkspace = location.pathname === '/workspace';
   const { isAuthenticated, user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -32,16 +33,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSignIn, onOpenSignUp }) =>
                   <User className="h-4 w-4" />
                   <span>{user?.firstName} {user?.lastName}</span>
                 </div>
-                <Button variant="ghost" onClick={logout} className="flex items-center space-x-2">
+                <Button variant="ghost" onClick={handleLogout} className="flex items-center space-x-2">
                   <LogOut className="h-4 w-4" />
                   <span>Logout</span>
                 </Button>
               </div>
-            ) : onOpenSignIn && onOpenSignUp ? (
-              <>
-                <Button variant="ghost" onClick={onOpenSignIn}>Sign In</Button>
-                <Button variant="gradient" onClick={onOpenSignUp}>Sign Up</Button>
-              </>
             ) : (
               <>
                 <Link to="/signin">
