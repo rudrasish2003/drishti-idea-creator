@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { RoadmapCheckpoint } from './RoadmapCheckpoint';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -35,12 +35,6 @@ export const ImplementationRoadmap: React.FC<ImplementationRoadmapProps> = ({ ph
     const stored = localStorage.getItem(`checkpoints_${projectId}`);
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
-
-  useEffect(() => {
-    const stored = localStorage.getItem(`checkpoints_${projectId}`);
-    setCompletedCheckpoints(stored ? new Set(JSON.parse(stored)) : new Set());
-  }, [projectId]);
-
 
   const toggleCheckpoint = (checkpointId: string) => {
     setCompletedCheckpoints(prev => {
