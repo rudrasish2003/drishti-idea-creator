@@ -69,7 +69,7 @@ const Workspace = () => {
     setHasStartedGeneration(hasPRD || isGenerating);
 
     if (hasPlan) {
-      const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content);
+      const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content, currentProject._id);
       setRoadmapPhases(phases);
     } else {
       setRoadmapPhases([]);
@@ -132,20 +132,31 @@ const Workspace = () => {
     }
   };
 
-  const transformImplementationToRoadmap = (implementationPlan: any) => {
+  const transformImplementationToRoadmap = (implementationPlan: any, projectId: string) => {
     if (implementationPlan?.phases && Array.isArray(implementationPlan.phases)) {
-      return implementationPlan.phases;
+      return implementationPlan.phases.map((phase: any, phaseIndex: number) => ({
+        ...phase,
+        id: `${projectId}-${phase.id}`,
+        stages: phase.stages?.map((stage: any, stageIndex: number) => ({
+          ...stage,
+          id: `${projectId}-${stage.id}`,
+          checkpoints: stage.checkpoints?.map((checkpoint: any, checkpointIndex: number) => ({
+            ...checkpoint,
+            id: `${projectId}-${checkpoint.id}`
+          }))
+        }))
+      }));
     }
     if (implementationPlan?.developmentPhases && Array.isArray(implementationPlan.developmentPhases)) {
       return implementationPlan.developmentPhases.map((phase: any, phaseIndex: number) => ({
-        id: `phase-${phaseIndex + 1}`,
+        id: `${projectId}-phase-${phaseIndex + 1}`,
         title: phase.phase,
         description: `Duration: ${phase.duration}`,
         stages: [{
-          id: `phase-${phaseIndex + 1}-stage-1`,
+          id: `${projectId}-phase-${phaseIndex + 1}-stage-1`,
           title: phase.phase,
           checkpoints: phase.tasks.map((task: any, taskIndex: number) => ({
-            id: `phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
+            id: `${projectId}-phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
             title: task.task,
             description: task.description,
             code: task.dependencies?.length > 0 
@@ -176,7 +187,7 @@ const Workspace = () => {
         const { project: updatedProject } = await apiService.getProject(currentProject._id);
         setCurrentProject(updatedProject);
         if (updatedProject?.implementationPlan?.content) {
-          const phases = transformImplementationToRoadmap(updatedProject.implementationPlan.content);
+          const phases = transformImplementationToRoadmap(updatedProject.implementationPlan.content, updatedProject._id);
           setRoadmapPhases(phases);
           setActiveTab('implementation');
         }
@@ -403,7 +414,7 @@ const Workspace = () => {
                       <div className="space-y-6">
                         <h2 className="text-2xl font-bold text-foreground">Implementation Roadmap</h2>
                         {roadmapPhases.length > 0 ? (
-                          <ImplementationRoadmap phases={roadmapPhases} />
+                          <ImplementationRoadmap phases={roadmapPhases} projectId={currentProject._id} />
                         ) : (
                           <div className="text-center text-muted-foreground py-12 bg-muted/30 rounded-lg">
                             <p className="text-lg">No roadmap available yet</p>
