@@ -403,7 +403,7 @@ const Workspace = () => {
                       <div className="space-y-6">
                         <h2 className="text-2xl font-bold text-foreground">Implementation Roadmap</h2>
                         {roadmapPhases.length > 0 ? (
-                          <ImplementationRoadmap phases={roadmapPhases} />
+                          <ImplementationRoadmap phases={roadmapPhases} projectId={currentProject._id} />
                         ) : (
                           <div className="text-center text-muted-foreground py-12 bg-muted/30 rounded-lg">
                             <p className="text-lg">No roadmap available yet</p>
