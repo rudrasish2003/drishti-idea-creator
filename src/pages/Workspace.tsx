@@ -44,12 +44,10 @@ const Workspace = () => {
     ? projectGenerationState[currentProject._id] || false
     : false;
 
-  // Fetch all projects once on load
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
-  // ✅ Properly updates state when switching projects
   useEffect(() => {
     if (!currentProject) {
       setCurrentIdea('');
@@ -69,7 +67,7 @@ const Workspace = () => {
     setHasStartedGeneration(hasPRD || isGenerating);
 
     if (hasPlan) {
-      const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content, currentProject._id);
+      const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content);
       setRoadmapPhases(phases);
     } else {
       setRoadmapPhases([]);
@@ -132,31 +130,20 @@ const Workspace = () => {
     }
   };
 
-  const transformImplementationToRoadmap = (implementationPlan: any, projectId: string) => {
+  const transformImplementationToRoadmap = (implementationPlan: any) => {
     if (implementationPlan?.phases && Array.isArray(implementationPlan.phases)) {
-      return implementationPlan.phases.map((phase: any, phaseIndex: number) => ({
-        ...phase,
-        id: `${projectId}-${phase.id}`,
-        stages: phase.stages?.map((stage: any, stageIndex: number) => ({
-          ...stage,
-          id: `${projectId}-${stage.id}`,
-          checkpoints: stage.checkpoints?.map((checkpoint: any, checkpointIndex: number) => ({
-            ...checkpoint,
-            id: `${projectId}-${checkpoint.id}`
-          }))
-        }))
-      }));
+      return implementationPlan.phases;
     }
     if (implementationPlan?.developmentPhases && Array.isArray(implementationPlan.developmentPhases)) {
       return implementationPlan.developmentPhases.map((phase: any, phaseIndex: number) => ({
-        id: `${projectId}-phase-${phaseIndex + 1}`,
+        id: `phase-${phaseIndex + 1}`,
         title: phase.phase,
         description: `Duration: ${phase.duration}`,
         stages: [{
-          id: `${projectId}-phase-${phaseIndex + 1}-stage-1`,
+          id: `phase-${phaseIndex + 1}-stage-1`,
           title: phase.phase,
           checkpoints: phase.tasks.map((task: any, taskIndex: number) => ({
-            id: `${projectId}-phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
+            id: `phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
             title: task.task,
             description: task.description,
             code: task.dependencies?.length > 0 
@@ -187,7 +174,7 @@ const Workspace = () => {
         const { project: updatedProject } = await apiService.getProject(currentProject._id);
         setCurrentProject(updatedProject);
         if (updatedProject?.implementationPlan?.content) {
-          const phases = transformImplementationToRoadmap(updatedProject.implementationPlan.content, updatedProject._id);
+          const phases = transformImplementationToRoadmap(updatedProject.implementationPlan.content);
           setRoadmapPhases(phases);
           setActiveTab('implementation');
         }
@@ -236,7 +223,7 @@ const Workspace = () => {
 
           <div className={`transition-all duration-500 ${hasStartedGeneration ? 'max-w-4xl mx-auto p-8' : 'flex items-center justify-center min-h-screen px-8'}`}>
 
-            {/* Input / Idea Section */}
+            {/* Input Section */}
             <div className={`w-full ${hasStartedGeneration ? 'mb-8' : 'max-w-3xl space-y-8'}`}>
               {!hasStartedGeneration && (
                 <div className="text-center space-y-4 animate-fade-in">
@@ -270,7 +257,6 @@ const Workspace = () => {
                 </Button>
               </div>
 
-              {/* 🌀 Inline Loader Below Input */}
               {isGenerating && (
                 <div className="flex justify-center mt-8">
                   <LoadingStages />
@@ -278,7 +264,7 @@ const Workspace = () => {
               )}
             </div>
 
-            {/* PRD / Implementation Display */}
+            {/* PRD / Implementation */}
             {currentProject?.prd && showCards && !isGenerating && (
               <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-between">
@@ -344,17 +330,13 @@ const Workspace = () => {
                   </DropdownMenu>
                 </div>
 
-                {/* Panels */}
                 <div className="relative overflow-hidden">
                   <div className={`transition-transform duration-300 ease-in-out ${
                     activeTab === 'prd' ? 'translate-x-0' : '-translate-x-full absolute top-0 left-0 w-full'
                   }`}>
                     <div className="space-y-6">
                       <h2 className="text-2xl font-bold text-foreground">Product Requirements Document</h2>
-                      <Flashcard
-                        title="Overview"
-                        content={currentProject.prd.content?.overview || 'No overview available'}
-                      />
+                      <Flashcard title="Overview" content={currentProject.prd.content?.overview || 'No overview available'} />
                       <Flashcard
                         title="Objectives"
                         content={Array.isArray(currentProject.prd.content?.objectives) 
@@ -414,7 +396,16 @@ const Workspace = () => {
                       <div className="space-y-6">
                         <h2 className="text-2xl font-bold text-foreground">Implementation Roadmap</h2>
                         {roadmapPhases.length > 0 ? (
-                          <ImplementationRoadmap phases={roadmapPhases} projectId={currentProject._id} />
+                          <div>
+                            <ImplementationRoadmap phases={roadmapPhases} />
+                            {/* 👇 Scoped style to enable horizontal scroll inside roadmap boxes only */}
+                            <style jsx global>{`
+                              .bg-card {
+                                overflow-x: auto !important;
+                                white-space: pre-wrap !important;
+                              }
+                            `}</style>
+                          </div>
                         ) : (
                           <div className="text-center text-muted-foreground py-12 bg-muted/30 rounded-lg">
                             <p className="text-lg">No roadmap available yet</p>
