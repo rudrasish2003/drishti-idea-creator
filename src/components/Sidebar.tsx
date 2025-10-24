@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Menu, X, Trash2, User as UserIcon, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, FileText, Menu, X, Trash2, User as UserIcon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 import { useNavigate } from 'react-router-dom';
 
 interface Project {
@@ -26,10 +37,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNewProject,
   selectedProjectId 
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { deleteProject } = useProjects();
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
   const navigate = useNavigate();
 
   const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
@@ -50,30 +60,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div className="h-full flex flex-col bg-sidebar border-r border-sidebar-border">
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary-light hover:from-primary-light hover:to-primary transition-colors flex items-center justify-center">
-              <span className="text-white font-bold text-sm">D</span>
-            </div>
-            <h2 className="font-semibold text-sidebar-foreground">Projects</h2>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden"
-              onClick={() => setIsMobileOpen(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden md:flex p-1 h-7 w-7"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </div>
+          <h2 className="font-semibold text-sidebar-foreground">Projects</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
         <Button
           variant="gradient"
@@ -135,30 +130,74 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Profile Section */}
       <div className="mt-auto p-4 border-t border-sidebar-border">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-              <UserIcon className="h-4 w-4 text-sidebar-foreground" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              logout();
-              setIsMobileOpen(false);
-              navigate('/');
-            }}
-            className="hover:bg-destructive/10 hover:text-destructive"
-            title="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <div className="flex items-center space-x-3 cursor-pointer p-2 rounded-md transition-all duration-200 hover:bg-sidebar-accent/70 hover:scale-[0.98] active:scale-[0.97]">
+                <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
+                  <UserIcon className="h-4 w-4 text-sidebar-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </div>
+              </div>
+            </PopoverTrigger>
+
+            <PopoverContent align="end">
+              <div className="space-y-3">
+                <div>
+                  <div className="text-sm font-medium">{user?.firstName} {user?.lastName}</div>
+                  <div className="text-xs text-muted-foreground">{user?.email}</div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      logout();
+                      setIsMobileOpen(false);
+                    }}
+                  >
+                    Logout
+                  </Button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">Delete account</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete account</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete your account and all associated projects. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="mt-4 flex justify-end gap-2">
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            try {
+                              await deleteAccount();
+                              toast.success('Account deleted');
+                              navigate('/');
+                              setIsMobileOpen(false);
+                            } catch (err: any) {
+                              toast.error(err?.message || 'Failed to delete account');
+                            }
+                          }}
+                        >
+                          Yes, delete
+                        </AlertDialogAction>
+                      </div>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </div>
@@ -187,36 +226,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* Desktop Sidebar */}
-      <div className={`hidden md:block transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-80'}`}>
-        {isCollapsed ? (
-          <div className="w-16 flex flex-col h-full bg-sidebar border-r border-sidebar-border">
-            <div className="p-4 border-b border-sidebar-border">
-              <button 
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-light hover:from-primary-light hover:to-primary transition-all duration-200 flex items-center justify-center group mb-3"
-              >
-                <span className="text-white font-bold text-sm group-hover:opacity-0 transition-opacity absolute">D</span>
-                <ChevronRight className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity absolute" />
-              </button>
-              <Button
-                variant="gradient"
-                size="sm"
-                className="w-full"
-                onClick={onNewProject}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex-1" />
-            <div className="p-4 border-t border-sidebar-border">
-              <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <UserIcon className="h-4 w-4 text-sidebar-foreground" />
-              </div>
-            </div>
-          </div>
-        ) : (
-          sidebarContent
-        )}
+      <div className="hidden md:block w-80">
+        {sidebarContent}
       </div>
     </>
   );

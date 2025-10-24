@@ -14,6 +14,7 @@ interface AuthContextType {
     lastName: string;
   }) => Promise<void>;
   logout: () => void;
+  deleteAccount: () => Promise<void>;
   error: string | null;
 }
 
@@ -87,6 +88,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
   };
 
+  const deleteAccount = async () => {
+    try {
+      setIsLoading(true);
+      await apiService.deleteAccount();
+      // Clear local auth state
+      apiService.clearToken();
+      setUser(null);
+      setError(null);
+    } catch (error: any) {
+      setError(error.message || 'Failed to delete account');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated,
@@ -94,6 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    deleteAccount,
     error,
   };
 

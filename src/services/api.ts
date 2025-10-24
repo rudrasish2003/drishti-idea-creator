@@ -80,7 +80,22 @@ class ApiService {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        // Build a friendly error message from common server shapes
+        let msg = errorData.error || errorData.message || '';
+        if (!msg && errorData.details) {
+          if (Array.isArray(errorData.details)) {
+            // express-validator: details is an array of { msg, param }
+            msg = errorData.details.map((d: any) => d.msg || JSON.stringify(d)).join('; ');
+          } else if (typeof errorData.details === 'string') {
+            msg = errorData.details;
+          }
+        }
+        if (!msg) msg = `HTTP error! status: ${response.status}`;
+
+        const error: any = new Error(msg);
+        error.status = response.status;
+        error.body = errorData;
+        throw error;
       }
 
       return await response.json();
@@ -185,6 +200,13 @@ class ApiService {
 
   async deleteProject(id: string): Promise<{ message: string }> {
     return this.request<{ message: string }>(`/projects/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Account methods
+  async deleteAccount(): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/auth/me`, {
       method: 'DELETE',
     });
   }
