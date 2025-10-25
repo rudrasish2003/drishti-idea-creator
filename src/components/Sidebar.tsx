@@ -4,18 +4,6 @@ import { Button } from '@/components/ui/button';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
-import { useNavigate } from 'react-router-dom';
 
 interface Project {
   _id: string;
@@ -37,10 +25,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNewProject,
   selectedProjectId 
 }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { deleteProject } = useProjects();
-  const { user, logout, deleteAccount } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent project selection when clicking delete
@@ -130,74 +118,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Profile Section */}
       <div className="mt-auto p-4 border-t border-sidebar-border">
         <div className="flex items-center justify-between">
-          <Popover>
-            <PopoverTrigger asChild>
-              <div className="flex items-center space-x-3 cursor-pointer p-2 rounded-md transition-all duration-200 hover:bg-sidebar-accent/70 hover:scale-[0.98] active:scale-[0.97]">
-                <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-                  <UserIcon className="h-4 w-4 text-sidebar-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                </div>
-              </div>
-            </PopoverTrigger>
-
-            <PopoverContent align="end">
-              <div className="space-y-3">
-                <div>
-                  <div className="text-sm font-medium">{user?.firstName} {user?.lastName}</div>
-                  <div className="text-xs text-muted-foreground">{user?.email}</div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      logout();
-                      setIsMobileOpen(false);
-                    }}
-                  >
-                    Logout
-                  </Button>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">Delete account</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete account</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete your account and all associated projects. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <div className="mt-4 flex justify-end gap-2">
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={async () => {
-                            try {
-                              await deleteAccount();
-                              toast.success('Account deleted');
-                              navigate('/');
-                              setIsMobileOpen(false);
-                            } catch (err: any) {
-                              toast.error(err?.message || 'Failed to delete account');
-                            }
-                          }}
-                        >
-                          Yes, delete
-                        </AlertDialogAction>
-                      </div>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
+              <UserIcon className="h-4 w-4 text-sidebar-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              logout();
+              setIsMobileOpen(false);
+            }}
+            className="hover:bg-destructive/10 hover:text-destructive"
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>
@@ -226,8 +169,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-80">
-        {sidebarContent}
+      <div className={`hidden md:block transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-80'}`}>
+        {!isCollapsed && sidebarContent}
       </div>
     </>
   );
