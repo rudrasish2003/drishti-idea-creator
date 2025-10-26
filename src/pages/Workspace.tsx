@@ -3,9 +3,9 @@ import { ArrowRight, Sparkles, Download, Send, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sidebar } from '@/components/Sidebar';
-import { Flashcard } from '@/components/Flashcard';
 import { LoadingStages } from '@/components/LoadingStages';
 import { ImplementationRoadmap } from '@/components/ImplementationRoadmap';
+import { PRDView } from '@/components/PRDView';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +67,7 @@ const Workspace = () => {
     setHasStartedGeneration(hasPRD || isGenerating);
 
     if (hasPlan) {
-      const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content);
+      const phases = transformImplementationToRoadmap(currentProject.implementationPlan.content, currentProject._id);
       setRoadmapPhases(phases);
     } else {
       setRoadmapPhases([]);
@@ -130,20 +130,20 @@ const Workspace = () => {
     }
   };
 
-  const transformImplementationToRoadmap = (implementationPlan: any) => {
+  const transformImplementationToRoadmap = (implementationPlan: any, projectId: string) => {
     if (implementationPlan?.phases && Array.isArray(implementationPlan.phases)) {
       return implementationPlan.phases;
     }
     if (implementationPlan?.developmentPhases && Array.isArray(implementationPlan.developmentPhases)) {
       return implementationPlan.developmentPhases.map((phase: any, phaseIndex: number) => ({
-        id: `phase-${phaseIndex + 1}`,
+        id: `${projectId}-phase-${phaseIndex + 1}`,
         title: phase.phase,
         description: `Duration: ${phase.duration}`,
         stages: [{
-          id: `phase-${phaseIndex + 1}-stage-1`,
+          id: `${projectId}-phase-${phaseIndex + 1}-stage-1`,
           title: phase.phase,
           checkpoints: phase.tasks.map((task: any, taskIndex: number) => ({
-            id: `phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
+            id: `${projectId}-phase-${phaseIndex + 1}-checkpoint-${taskIndex + 1}`,
             title: task.task,
             description: task.description,
             code: task.dependencies?.length > 0 
@@ -174,7 +174,7 @@ const Workspace = () => {
         const { project: updatedProject } = await apiService.getProject(currentProject._id);
         setCurrentProject(updatedProject);
         if (updatedProject?.implementationPlan?.content) {
-          const phases = transformImplementationToRoadmap(updatedProject.implementationPlan.content);
+          const phases = transformImplementationToRoadmap(updatedProject.implementationPlan.content, updatedProject._id);
           setRoadmapPhases(phases);
           setActiveTab('implementation');
         }
@@ -336,31 +336,9 @@ const Workspace = () => {
                   }`}>
                     <div className="space-y-6">
                       <h2 className="text-2xl font-bold text-foreground">Product Requirements Document</h2>
-                      <Flashcard title="Overview" content={currentProject.prd.content?.overview || 'No overview available'} />
-                      <Flashcard
-                        title="Objectives"
-                        content={Array.isArray(currentProject.prd.content?.objectives) 
-                          ? '• ' + currentProject.prd.content.objectives.join('\n• ') 
-                          : 'No objectives available'}
-                      />
-                      <Flashcard
-                        title="Target Audience"
-                        content={`Primary: ${currentProject.prd.content?.targetAudience?.primary || 'Not specified'}\nSecondary: ${currentProject.prd.content?.targetAudience?.secondary || 'Not specified'}`}
-                      />
-                      <Flashcard
-                        title="Core Features"
-                        content={Array.isArray(currentProject.prd.content?.features) 
-                          ? currentProject.prd.content.features.map((f: any) => `• ${f.name}: ${f.description}`).join('\n')
-                          : 'No features available'}
-                      />
-                      <Flashcard
-                        title="Success Metrics"
-                        content={Array.isArray(currentProject.prd.content?.successMetrics) 
-                          ? '• ' + currentProject.prd.content.successMetrics.join('\n• ')
-                          : 'No success metrics available'}
-                      />
+                      <PRDView content={currentProject.prd.content} />
                       {currentProject?.prd && (
-                        <div className="flex justify-center">
+                        <div className="flex justify-center pt-6">
                           <Button 
                             onClick={handleGenerateImplementation}
                             variant="gradient"
@@ -396,16 +374,7 @@ const Workspace = () => {
                       <div className="space-y-6">
                         <h2 className="text-2xl font-bold text-foreground">Implementation Roadmap</h2>
                         {roadmapPhases.length > 0 ? (
-                          <div>
-                            <ImplementationRoadmap phases={roadmapPhases} />
-                            {/* 👇 Scoped style to enable horizontal scroll inside roadmap boxes only */}
-                            <style jsx global>{`
-                              .bg-card {
-                                overflow-x: auto !important;
-                                white-space: pre-wrap !important;
-                              }
-                            `}</style>
-                          </div>
+                          <ImplementationRoadmap phases={roadmapPhases} projectId={currentProject._id} />
                         ) : (
                           <div className="text-center text-muted-foreground py-12 bg-muted/30 rounded-lg">
                             <p className="text-lg">No roadmap available yet</p>
