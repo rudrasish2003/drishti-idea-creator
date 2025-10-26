@@ -398,22 +398,30 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
               Risks & Mitigation
             </h2>
             <Accordion type="single" collapsible className="space-y-2">
-              {content.risks.map((risk, idx) => (
-                <AccordionItem key={idx} value={`risk-${idx}`} className="border-2 border-destructive/20 rounded-lg px-4">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-3 text-left">
-                      <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
-                      <p className="font-semibold text-foreground">{risk.risk}</p>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="pl-8 pt-2">
-                      <p className="text-sm font-medium text-foreground mb-1">Mitigation Strategy:</p>
-                      <p className="text-sm text-muted-foreground">{risk.mitigation}</p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
+              {content.risks.map((risk, idx) => {
+                // Handle both object format {risk, mitigation} and string format
+                const riskText = typeof risk === 'string' ? risk : risk.risk || 'Risk not specified';
+                const mitigationText = typeof risk === 'string' 
+                  ? 'Mitigation strategy to be determined' 
+                  : risk.mitigation || 'Mitigation strategy to be determined';
+                
+                return (
+                  <AccordionItem key={idx} value={`risk-${idx}`} className="border-2 border-destructive/20 rounded-lg px-4">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3 text-left">
+                        <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
+                        <p className="font-semibold text-foreground">{riskText}</p>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pl-8 pt-2">
+                        <p className="text-sm font-medium text-foreground mb-1">Mitigation Strategy:</p>
+                        <p className="text-sm text-muted-foreground">{mitigationText}</p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
             </Accordion>
           </section>
         )}
