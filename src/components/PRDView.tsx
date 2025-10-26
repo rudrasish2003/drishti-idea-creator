@@ -106,13 +106,37 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
     low: content.features?.filter(f => f.priority?.toLowerCase() === 'low') || [],
   };
 
+  // Filter sections based on available content
+  const availableSections = sections.filter(section => {
+    switch (section.id) {
+      case 'overview':
+        return Boolean(content.overview);
+      case 'objectives':
+        return content.objectives && content.objectives.length > 0;
+      case 'audience':
+        return Boolean(content.targetAudience?.primary || content.targetAudience?.secondary);
+      case 'features':
+        return content.features && content.features.length > 0;
+      case 'technical':
+        return content.technicalRequirements && content.technicalRequirements.length > 0;
+      case 'timeline':
+        return content.timeline && content.timeline.length > 0;
+      case 'metrics':
+        return content.successMetrics && content.successMetrics.length > 0;
+      case 'risks':
+        return content.risks && content.risks.length > 0;
+      default:
+        return true;
+    }
+  });
+
   return (
     <div className="relative h-full">
       {/* Sticky Navigation */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
         <ScrollArea className="w-full">
           <div className="flex gap-1 p-2">
-            {sections.map((section) => {
+            {availableSections.map((section) => {
               const Icon = section.icon;
               return (
                 <Button
@@ -399,11 +423,39 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
             </h2>
             <Accordion type="single" collapsible className="space-y-2">
               {content.risks.map((risk, idx) => {
-                // Handle both object format {risk, mitigation} and string format
-                const riskText = typeof risk === 'string' ? risk : risk.risk || 'Risk not specified';
-                const mitigationText = typeof risk === 'string' 
-                  ? 'Mitigation strategy to be determined' 
-                  : risk.mitigation || 'Mitigation strategy to be determined';
+                // Handle different risk formats
+                let riskText = '';
+                let mitigationText = '';
+                
+                // Extract risk text first
+                if (typeof risk === 'string') {
+                  riskText = risk;
+                } else if (risk && typeof risk === 'object') {
+                  riskText = risk.risk || 'Risk not specified';
+                  mitigationText = risk.mitigation || '';
+                } else {
+                  riskText = 'Risk not specified';
+                }
+                
+                // If mitigation is not provided, generate contextual mitigation
+                if (!mitigationText) {
+                  const lowerRisk = riskText.toLowerCase();
+                  if (lowerRisk.includes('timeline') || lowerRisk.includes('delay')) {
+                    mitigationText = 'Implement agile methodology with regular sprint reviews and buffer time for critical paths. Monitor progress daily and adjust resources proactively.';
+                  } else if (lowerRisk.includes('budget') || lowerRisk.includes('cost')) {
+                    mitigationText = 'Establish detailed cost tracking system, implement phased spending approach, and maintain contingency fund of 15-20% for unforeseen expenses.';
+                  } else if (lowerRisk.includes('scope') || lowerRisk.includes('requirement')) {
+                    mitigationText = 'Define clear scope boundaries, implement formal change request process, and conduct regular stakeholder alignment meetings.';
+                  } else if (lowerRisk.includes('technical') || lowerRisk.includes('technology')) {
+                    mitigationText = 'Conduct proof of concept early, maintain technical documentation, ensure team training, and establish technical review checkpoints.';
+                  } else if (lowerRisk.includes('resource') || lowerRisk.includes('team')) {
+                    mitigationText = 'Cross-train team members, document key processes, maintain backup resources, and implement knowledge sharing sessions.';
+                  } else if (lowerRisk.includes('quality') || lowerRisk.includes('bug')) {
+                    mitigationText = 'Implement comprehensive testing strategy, conduct regular code reviews, establish quality metrics, and allocate dedicated QA time.';
+                  } else {
+                    mitigationText = 'Develop comprehensive risk response plan, assign risk owners, implement regular monitoring, and establish escalation procedures for early intervention.';
+                  }
+                }
                 
                 return (
                   <AccordionItem key={idx} value={`risk-${idx}`} className="border-2 border-destructive/20 rounded-lg px-4">
