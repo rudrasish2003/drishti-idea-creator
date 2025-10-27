@@ -323,16 +323,18 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
             </h2>
             <Card>
               <CardContent className="pt-6">
-                <div className="grid md:grid-cols-2 gap-3">
-                  {content.technicalRequirements.map((req, idx) => (
-                    <div key={idx} className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
-                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs text-primary-foreground">✓</span>
+                <ScrollArea className="w-full">
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {content.technicalRequirements.map((req, idx) => (
+                      <div key={idx} className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
+                        <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-xs text-primary-foreground">✓</span>
+                        </div>
+                        <p className="text-sm text-foreground break-words">{req}</p>
                       </div>
-                      <p className="text-sm text-foreground">{req}</p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           </section>
@@ -347,38 +349,40 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
           >
             <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
               <Clock className="h-6 w-6 text-primary" />
-              Project Timeline
+              Timeline
             </h2>
-            <Accordion type="single" collapsible className="space-y-2">
-              {content.timeline.map((phase, idx) => (
-                <AccordionItem key={idx} value={`phase-${idx}`} className="border rounded-lg px-4">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-3 text-left">
-                      <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                        {idx + 1}
+            <ScrollArea className="w-full">
+              <div className="space-y-3">
+                {content.timeline.map((phase, idx) => (
+                  <Card key={idx} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold flex-shrink-0">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg break-words">{phase.phase}</CardTitle>
+                          <CardDescription className="break-words">{phase.duration}</CardDescription>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold">{phase.phase}</p>
-                        <p className="text-sm text-muted-foreground">{phase.duration}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-foreground">Deliverables:</p>
+                        <ul className="space-y-1">
+                          {phase.deliverables.map((deliverable, dIdx) => (
+                            <li key={dIdx} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <span className="text-primary">•</span>
+                              <span className="break-words">{deliverable}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="pl-11 pt-2 space-y-2">
-                      <p className="text-sm font-medium text-foreground">Deliverables:</p>
-                      <ul className="space-y-1">
-                        {phase.deliverables.map((deliverable, dIdx) => (
-                          <li key={dIdx} className="text-sm text-muted-foreground flex items-start gap-2">
-                            <span className="text-primary">•</span>
-                            {deliverable}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </section>
         )}
 
@@ -419,62 +423,26 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
           >
             <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
               <AlertTriangle className="h-6 w-6 text-primary" />
-              Risks & Mitigation
+              Risks
             </h2>
-            <Accordion type="single" collapsible className="space-y-2">
-              {content.risks.map((risk, idx) => {
-                // Handle different risk formats
-                let riskText = '';
-                let mitigationText = '';
-                
-                // Extract risk text first
-                if (typeof risk === 'string') {
-                  riskText = risk;
-                } else if (risk && typeof risk === 'object') {
-                  riskText = risk.risk || 'Risk not specified';
-                  mitigationText = risk.mitigation || '';
-                } else {
-                  riskText = 'Risk not specified';
-                }
-                
-                // If mitigation is not provided, generate contextual mitigation
-                if (!mitigationText) {
-                  const lowerRisk = riskText.toLowerCase();
-                  if (lowerRisk.includes('timeline') || lowerRisk.includes('delay')) {
-                    mitigationText = 'Implement agile methodology with regular sprint reviews and buffer time for critical paths. Monitor progress daily and adjust resources proactively.';
-                  } else if (lowerRisk.includes('budget') || lowerRisk.includes('cost')) {
-                    mitigationText = 'Establish detailed cost tracking system, implement phased spending approach, and maintain contingency fund of 15-20% for unforeseen expenses.';
-                  } else if (lowerRisk.includes('scope') || lowerRisk.includes('requirement')) {
-                    mitigationText = 'Define clear scope boundaries, implement formal change request process, and conduct regular stakeholder alignment meetings.';
-                  } else if (lowerRisk.includes('technical') || lowerRisk.includes('technology')) {
-                    mitigationText = 'Conduct proof of concept early, maintain technical documentation, ensure team training, and establish technical review checkpoints.';
-                  } else if (lowerRisk.includes('resource') || lowerRisk.includes('team')) {
-                    mitigationText = 'Cross-train team members, document key processes, maintain backup resources, and implement knowledge sharing sessions.';
-                  } else if (lowerRisk.includes('quality') || lowerRisk.includes('bug')) {
-                    mitigationText = 'Implement comprehensive testing strategy, conduct regular code reviews, establish quality metrics, and allocate dedicated QA time.';
-                  } else {
-                    mitigationText = 'Develop comprehensive risk response plan, assign risk owners, implement regular monitoring, and establish escalation procedures for early intervention.';
-                  }
-                }
-                
-                return (
-                  <AccordionItem key={idx} value={`risk-${idx}`} className="border-2 border-destructive/20 rounded-lg px-4">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-3 text-left">
-                        <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
-                        <p className="font-semibold text-foreground">{riskText}</p>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="pl-8 pt-2">
-                        <p className="text-sm font-medium text-foreground mb-1">Mitigation Strategy:</p>
-                        <p className="text-sm text-muted-foreground">{mitigationText}</p>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+            <ScrollArea className="w-full">
+              <div className="grid md:grid-cols-2 gap-4">
+                {content.risks.map((risk, idx) => {
+                  const riskText = typeof risk === 'string' ? risk : (risk && typeof risk === 'object' ? risk.risk : 'Risk not specified');
+                  
+                  return (
+                    <Card key={idx} className="border-2 border-destructive/20 hover:shadow-lg transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-foreground font-medium break-words">{riskText}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           </section>
         )}
       </div>
