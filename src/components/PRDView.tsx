@@ -352,9 +352,9 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
               Timeline
             </h2>
             <ScrollArea className="w-full">
-              <div className="space-y-3">
+              <div className="flex gap-4 pb-4 snap-x snap-mandatory">
                 {content.timeline.map((phase, idx) => (
-                  <Card key={idx} className="hover:shadow-lg transition-shadow">
+                  <Card key={idx} className="min-w-[350px] max-w-[350px] snap-start hover:shadow-lg transition-all hover:scale-105">
                     <CardHeader>
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold flex-shrink-0">
