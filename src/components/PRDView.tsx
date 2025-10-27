@@ -120,7 +120,7 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
       case 'technical':
         return content.technicalRequirements && content.technicalRequirements.length > 0;
       case 'timeline':
-        return content.timeline && content.timeline.length > 0;
+        return true;
       case 'metrics':
         return content.successMetrics && content.successMetrics.length > 0;
       case 'risks':
@@ -279,24 +279,24 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
             </TabsList>
             {(['high', 'medium', 'low'] as const).map((priority) => (
               <TabsContent key={priority} value={priority} className="mt-4">
-                <ScrollArea className="w-full">
-                  <div className="flex gap-4 pb-4 snap-x snap-mandatory">
+                <ScrollArea className="w-full whitespace-nowrap">
+                  <div className="flex gap-4 pb-4">
                     {featuresByPriority[priority].length > 0 ? (
                       featuresByPriority[priority].map((feature, idx) => (
                         <Card
                           key={idx}
-                          className="min-w-[300px] max-w-[300px] snap-start hover:shadow-lg transition-all hover:scale-105"
+                          className="min-w-[300px] max-w-[300px] inline-block hover:shadow-lg transition-all hover:scale-105"
                         >
                           <CardHeader>
                             <div className="flex items-start justify-between gap-2">
-                              <CardTitle className="text-base">{feature.name}</CardTitle>
+                              <CardTitle className="text-base whitespace-normal">{feature.name}</CardTitle>
                               <Badge className={getPriorityColor(feature.priority)}>
                                 {feature.priority}
                               </Badge>
                             </div>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-sm text-muted-foreground">{feature.description}</p>
+                            <p className="text-sm text-muted-foreground whitespace-normal">{feature.description}</p>
                           </CardContent>
                         </Card>
                       ))
@@ -341,16 +341,16 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
         )}
 
         {/* Timeline */}
-        {content.timeline && content.timeline.length > 0 && (
-          <section
-            ref={(el) => (sectionRefs.current['timeline'] = el)}
-            className="animate-fade-in space-y-4"
-            style={{ animationDelay: '250ms' }}
-          >
-            <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <Clock className="h-6 w-6 text-primary" />
-              Timeline
-            </h2>
+        <section
+          ref={(el) => (sectionRefs.current['timeline'] = el)}
+          className="animate-fade-in space-y-4"
+          style={{ animationDelay: '250ms' }}
+        >
+          <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <Clock className="h-6 w-6 text-primary" />
+            Timeline
+          </h2>
+          {content.timeline && content.timeline.length > 0 ? (
             <ScrollArea className="w-full">
               <div className="flex gap-4 pb-4 snap-x snap-mandatory">
                 {content.timeline.map((phase, idx) => (
@@ -383,8 +383,14 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
                 ))}
               </div>
             </ScrollArea>
-          </section>
-        )}
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-muted-foreground">No timeline available</p>
+              </CardContent>
+            </Card>
+          )}
+        </section>
 
         {/* Success Metrics */}
         <section
