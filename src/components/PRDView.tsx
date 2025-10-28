@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, User, AlertTriangle, Target, Code, Clock, TrendingUp, Plus } from 'lucide-react';
+import { Users, User, AlertTriangle, Target, Code, Clock, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PRDContent {
@@ -134,8 +134,8 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
     <div className="relative h-full">
       {/* Sticky Navigation */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
-        <ScrollArea className="w-full">
-          <div className="flex gap-1 p-2">
+        <div className="w-full overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 p-2 min-w-min">
             {availableSections.map((section) => {
               const Icon = section.icon;
               return (
@@ -145,7 +145,7 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
                   size="sm"
                   onClick={() => scrollToSection(section.id)}
                   className={cn(
-                    "flex items-center gap-2 transition-colors whitespace-nowrap",
+                    "flex items-center gap-2 transition-colors whitespace-nowrap flex-shrink-0",
                     activeSection === section.id && "bg-muted text-foreground"
                   )}
                 >
@@ -155,7 +155,16 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
               );
             })}
           </div>
-        </ScrollArea>
+        </div>
+        <style jsx>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}</style>
       </div>
 
       {/* Content */}
@@ -184,16 +193,10 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
           className="animate-fade-in space-y-4"
           style={{ animationDelay: '50ms' }}
         >
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-primary" />
-              Objectives
-            </h2>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Objective
-            </Button>
-          </div>
+          <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <TrendingUp className="h-6 w-6 text-primary" />
+            Objectives
+          </h2>
           <Accordion type="single" collapsible defaultValue="objectives-content">
             <AccordionItem value="objectives-content" className="border rounded-lg px-4">
               <AccordionTrigger className="hover:no-underline">
@@ -279,13 +282,13 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
             </TabsList>
             {(['high', 'medium', 'low'] as const).map((priority) => (
               <TabsContent key={priority} value={priority} className="mt-4">
-                <ScrollArea className="w-full whitespace-nowrap">
-                  <div className="flex gap-4 pb-4">
+                <div className="overflow-x-auto">
+                  <div className="flex gap-4 pb-4 min-w-min">
                     {featuresByPriority[priority].length > 0 ? (
                       featuresByPriority[priority].map((feature, idx) => (
                         <Card
                           key={idx}
-                          className="min-w-[300px] max-w-[300px] inline-block hover:shadow-lg transition-all hover:scale-105"
+                          className="min-w-[300px] max-w-[300px] flex-shrink-0 hover:shadow-lg transition-all hover:scale-105"
                         >
                           <CardHeader>
                             <div className="flex items-start justify-between gap-2">
@@ -304,7 +307,7 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
                       <p className="text-muted-foreground p-4">No {priority} priority features</p>
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
             ))}
           </Tabs>
