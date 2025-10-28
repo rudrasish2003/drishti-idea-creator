@@ -21,11 +21,14 @@ interface PRDContent {
     priority?: 'high' | 'medium' | 'low';
   }>;
   technicalRequirements?: string[];
-  timeline?: Array<{
-    phase: string;
-    duration: string;
-    deliverables: string[];
-  }>;
+  timeline?: {
+    estimatedDuration?: string;
+    phases?: Array<{
+      phase: string;
+      duration: string;
+      deliverables: string[];
+    }>;
+  };
   successMetrics?: string[];
   risks?: Array<{
     risk: string;
@@ -120,7 +123,7 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
       case 'technical':
         return content.technicalRequirements && content.technicalRequirements.length > 0;
       case 'timeline':
-        return true;
+        return Boolean(content.timeline?.phases && content.timeline.phases.length > 0);
       case 'metrics':
         return content.successMetrics && content.successMetrics.length > 0;
       case 'risks':
@@ -349,47 +352,97 @@ export const PRDView: React.FC<PRDViewProps> = ({ content }) => {
           className="animate-fade-in space-y-4"
           style={{ animationDelay: '250ms' }}
         >
-          <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Clock className="h-6 w-6 text-primary" />
-            Timeline
-          </h2>
-          {content.timeline && content.timeline.length > 0 ? (
-            <ScrollArea className="w-full">
-              <div className="flex gap-4 pb-4 snap-x snap-mandatory">
-                {content.timeline.map((phase, idx) => (
-                  <Card key={idx} className="min-w-[350px] max-w-[350px] snap-start hover:shadow-lg transition-all hover:scale-105">
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold flex-shrink-0">
-                          {idx + 1}
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <Clock className="h-6 w-6 text-primary" />
+              Project Timeline
+            </h2>
+            {content.timeline?.estimatedDuration && (
+              <Badge variant="secondary" className="text-sm px-3 py-1">
+                {content.timeline.estimatedDuration}
+              </Badge>
+            )}
+          </div>
+          
+          {content.timeline?.phases && content.timeline.phases.length > 0 ? (
+            <Tabs defaultValue="accordion" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="accordion">Accordion View</TabsTrigger>
+                <TabsTrigger value="scroll">Horizontal Scroll</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="accordion">
+                <Accordion type="single" collapsible className="space-y-2">
+                  {content.timeline.phases.map((phase, idx) => (
+                    <AccordionItem key={idx} value={`phase-${idx}`} className="border rounded-lg px-4">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold flex-shrink-0 text-sm">
+                            {idx + 1}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="font-semibold">{phase.phase}</div>
+                            <div className="text-sm text-muted-foreground">{phase.duration}</div>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg break-words">{phase.phase}</CardTitle>
-                          <CardDescription className="break-words">{phase.duration}</CardDescription>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="pt-4 pb-2 pl-11">
+                          <p className="text-sm font-medium text-foreground mb-3">Key Deliverables:</p>
+                          <ul className="space-y-2">
+                            {phase.deliverables.map((deliverable, dIdx) => (
+                              <li key={dIdx} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <span className="text-primary mt-1">✓</span>
+                                <span className="break-words">{deliverable}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-foreground">Deliverables:</p>
-                        <ul className="space-y-1">
-                          {phase.deliverables.map((deliverable, dIdx) => (
-                            <li key={dIdx} className="text-sm text-muted-foreground flex items-start gap-2">
-                              <span className="text-primary">•</span>
-                              <span className="break-words">{deliverable}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </TabsContent>
+              
+              <TabsContent value="scroll">
+                <div className="overflow-x-auto">
+                  <div className="flex gap-4 pb-4 min-w-min">
+                    {content.timeline.phases.map((phase, idx) => (
+                      <Card key={idx} className="min-w-[350px] max-w-[350px] flex-shrink-0 hover:shadow-lg transition-all hover:scale-105">
+                        <CardHeader>
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold flex-shrink-0">
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-lg break-words">{phase.phase}</CardTitle>
+                              <CardDescription className="break-words">{phase.duration}</CardDescription>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-foreground">Key Deliverables:</p>
+                            <ul className="space-y-2">
+                              {phase.deliverables.map((deliverable, dIdx) => (
+                                <li key={dIdx} className="text-sm text-muted-foreground flex items-start gap-2">
+                                  <span className="text-primary">✓</span>
+                                  <span className="break-words">{deliverable}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           ) : (
             <Card>
               <CardContent className="pt-6">
-                <p className="text-muted-foreground">No timeline available</p>
+                <p className="text-muted-foreground">No project phases available</p>
               </CardContent>
             </Card>
           )}
