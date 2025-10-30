@@ -122,7 +122,7 @@ export const ImplementationRoadmap: React.FC<ImplementationRoadmapProps> = ({ ph
                   </div>
                   
                   {/* Checkpoints */}
-                  <div className="ml-8 space-y-3">
+                  <div className="ml-8 space-y-3 overflow-x-auto">
                     {stage.checkpoints.map((checkpoint) => (
                       <RoadmapCheckpoint
                         key={checkpoint.id}
